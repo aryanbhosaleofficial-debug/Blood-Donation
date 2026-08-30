@@ -42,6 +42,21 @@ const REQUEST_STATUS = Object.freeze({
   EXPIRED: 'EXPIRED',
 });
 
+const REQUEST_URGENCY = Object.freeze({
+  NORMAL: 'NORMAL',
+  URGENT: 'URGENT',
+  CRITICAL: 'CRITICAL',
+});
+
+const REQUEST_URGENCY_VALUES = Object.freeze(Object.values(REQUEST_URGENCY));
+
+// Broadcast lifecycle for Module 03. ACCEPTED/ALLOCATED/DENIED belong to Module 04.
+const BROADCAST_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  VIEWED: 'VIEWED',
+  CLOSED: 'CLOSED',
+});
+
 const ALLOCATION_STATUS = Object.freeze({
   RESERVED: 'RESERVED',
   RELEASED: 'RELEASED',
@@ -74,6 +89,9 @@ module.exports = Object.freeze({
   BLOOD_GROUPS,
   COMPONENTS,
   REQUEST_STATUS,
+  REQUEST_URGENCY,
+  REQUEST_URGENCY_VALUES,
+  BROADCAST_STATUS,
   ALLOCATION_STATUS,
   PLEDGE_STATUS,
   NOTIFICATION_STATUS,

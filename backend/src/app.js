@@ -36,6 +36,8 @@ const authRoutes = require('./modules/auth/auth.routes');
 const hospitalRoutes = require('./modules/hospitals/hospitals.routes');
 const bloodBankRoutes = require('./modules/blood-banks/blood-banks.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
+const requestRoutes = require('./modules/requests/requests.routes');
+const bankRequestRoutes = require('./modules/broadcasts/broadcasts.routes');
 
 const FRONTEND_DIR = path.resolve(__dirname, '..', '..', 'frontend');
 
@@ -108,8 +110,10 @@ function createApp({ mountExtra } = {}) {
   app.use(`${API_PREFIX}/health`, healthRoutes);
   app.use(`${API_PREFIX}/auth`, authRoutes);
   app.use(`${API_PREFIX}/hospital`, hospitalRoutes);
+  app.use(`${API_PREFIX}/blood-bank/requests`, bankRequestRoutes);
   app.use(`${API_PREFIX}/blood-bank`, bloodBankRoutes);
   app.use(`${API_PREFIX}/admin`, adminRoutes);
+  app.use(`${API_PREFIX}/requests`, requestRoutes);
 
   // Test-only protected routes (e.g. for CSRF / role assertions). Never mounted
   // in a normal run - the test harness passes this in.

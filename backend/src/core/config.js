@@ -157,6 +157,8 @@ function buildConfig(env) {
     inventoryStaleMinutes: integerInRange('INVENTORY_STALE_MINUTES', 30, 1, 525600),
 
     requestTtlMinutes: integer('REQUEST_TTL_MINUTES', 120),
+    requestMaxUnits: integerInRange('REQUEST_MAX_UNITS', 20, 1, 100000),
+    requestBackupSlotsDefault: integerInRange('REQUEST_BACKUP_SLOTS_DEFAULT', 0, 0, 100),
     locationSessionTtlMinutes: integer('LOCATION_SESSION_TTL_MINUTES', 30),
     availabilityFreshnessDays: integer('AVAILABILITY_FRESHNESS_DAYS', 7),
     notificationMaxAttempts: integer('NOTIFICATION_MAX_ATTEMPTS', 3),

@@ -1,8 +1,9 @@
 -- Community Blood Donation Matching System
--- Bootstrap through Module 02 (Organizations & Inventory) schema.
+-- Bootstrap through Module 03 (Emergency Requests) schema.
 --
--- Module 01 adds `users`; Module 02 adds organization profiles and inventory.
--- Later request, donor, notification, and surge domains are intentionally absent.
+-- Module 01 adds `users`; Module 02 adds organization profiles and inventory;
+-- Module 03 adds `requests` and `request_broadcasts`.
+-- Later allocation, donor, notification, and surge domains are intentionally absent.
 --
 -- This file is executed on every startup and MUST be idempotent.
 
@@ -18,7 +19,7 @@ CREATE TABLE IF NOT EXISTS app_meta (
 
 -- schema_version is upserted so re-running the bootstrap keeps it current.
 INSERT INTO app_meta (key, value)
-VALUES ('schema_version', '2')
+VALUES ('schema_version', '3')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now');
 
 INSERT INTO app_meta (key, value)
@@ -131,3 +132,45 @@ CREATE TRIGGER IF NOT EXISTS trg_blood_banks_updated_at AFTER UPDATE ON blood_ba
 FOR EACH ROW BEGIN
   UPDATE blood_banks SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = OLD.id;
 END;
+
+-- ---------------------------------------------------------------------------
+-- Module 03: emergency requests and blood-bank broadcasts
+-- ---------------------------------------------------------------------------
+-- Request state model is intentionally small: OPEN | COVERED | COMPLETED |
+-- CANCELLED | EXPIRED. Module 03 only reaches OPEN, COMPLETED, CANCELLED.
+-- COVERED is set by Module 04 allocations; EXPIRED by a later cleanup job.
+CREATE TABLE IF NOT EXISTS requests (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_request_id TEXT    NOT NULL,
+  hospital_id       INTEGER NOT NULL REFERENCES hospitals(id) ON DELETE CASCADE,
+  blood_group       TEXT    NOT NULL CHECK (blood_group IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
+  component         TEXT    NOT NULL DEFAULT 'RED_CELLS' CHECK (component = 'RED_CELLS'),
+  units_needed      INTEGER NOT NULL CHECK (typeof(units_needed) = 'integer' AND units_needed >= 1),
+  backup_slots      INTEGER NOT NULL DEFAULT 0 CHECK (typeof(backup_slots) = 'integer' AND backup_slots >= 0),
+  urgency           TEXT    NOT NULL CHECK (urgency IN ('NORMAL', 'URGENT', 'CRITICAL')),
+  status            TEXT    NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'COVERED', 'COMPLETED', 'CANCELLED', 'EXPIRED')),
+  note              TEXT,
+  is_synthetic      INTEGER NOT NULL DEFAULT 0 CHECK (is_synthetic IN (0, 1)),
+  scenario_id       TEXT,
+  created_at        TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  expires_at        TEXT    NOT NULL,
+  closed_at         TEXT,
+  UNIQUE (hospital_id, client_request_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_requests_hospital ON requests(hospital_id);
+CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
+
+CREATE TABLE IF NOT EXISTS request_broadcasts (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id   INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+  bank_id      INTEGER NOT NULL REFERENCES blood_banks(id) ON DELETE CASCADE,
+  status       TEXT    NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'VIEWED', 'CLOSED')),
+  sent_at      TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  responded_at TEXT,
+  created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  UNIQUE (request_id, bank_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_request_broadcasts_bank ON request_broadcasts(bank_id);
+CREATE INDEX IF NOT EXISTS idx_request_broadcasts_request ON request_broadcasts(request_id);
