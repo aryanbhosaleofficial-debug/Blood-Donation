@@ -50,6 +50,7 @@ const pledgeRoutes = require('./modules/pledges/pledges.routes');
 const notificationRoutes = require('./modules/notifications/notifications.routes');
 const auditRoutes = require('./modules/audit/audit.routes');
 const metricsRoutes = require('./modules/metrics/metrics.routes');
+const surgeRoutes = require('./modules/surge/surge.routes');
 
 const FRONTEND_DIR = path.resolve(__dirname, '..', '..', 'frontend');
 
@@ -126,6 +127,7 @@ function createApp({ mountExtra } = {}) {
   app.use(`${API_PREFIX}/blood-bank`, bloodBankRoutes);
   app.use(`${API_PREFIX}/admin/audit-logs`, auditRoutes);
   app.use(`${API_PREFIX}/admin/metrics`, metricsRoutes);
+  app.use(`${API_PREFIX}/admin/surge`, surgeRoutes);
   app.use(`${API_PREFIX}/admin`, adminRoutes);
   app.use(`${API_PREFIX}/requests`, requestRoutes);
   app.use(`${API_PREFIX}/allocations`, allocationRoutes);

@@ -449,3 +449,28 @@ Preserve and reinforce:
 - Automatically restored inventory is bounded by `INVENTORY_MAX_UNITS`; an
   inconsistency that would breach it is surfaced as a controlled failure,
   not silently clamped.
+
+---
+
+# 12. Module 9 — Surge Detection safety statements
+
+- **The system detects unusual blood-demand patterns. It does not predict
+  disasters.** It knows only about request data inside this platform.
+- **It does not identify the external cause of demand.** It may say "Unusual
+  O- red-cell demand detected in Ahmedabad"; it may not say "Major accident
+  detected in Ahmedabad".
+- **A statistical candidate always requires administrator review.** The
+  automatic detector only creates `PENDING` candidates — never `CONFIRMED`.
+- **A confirmed surge is an internal operational blood-demand state.** It is
+  not confirmation of a disaster, mass-casualty event, epidemic, or clinical
+  emergency, and it triggers no automatic public alert, donor mass-broadcast,
+  or authority contact.
+- **The Poisson upper-tail probability is not a disaster probability.** It is
+  the probability of observing this many or more requests under the
+  configured baseline model.
+- **Synthetic demo data is clearly separated from real data.** Synthetic
+  baselines and synthetic candidates carry `is_synthetic = 1` and a visible
+  `DEMO` label in the UI; REAL mode never uses synthetic baselines.
+- **The detector uses no donor private data.** It does not read donor phone,
+  email, internal donor location, live donor coordinates, or patient-sensitive
+  request notes. Geographic evidence uses hospital facility coordinates only.

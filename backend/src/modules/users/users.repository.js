@@ -33,6 +33,16 @@ function emailExists(email) {
 }
 
 /**
+ * Active users with a given role. Accepts an optional transaction db handle.
+ * @param {string} role
+ * @param {import('better-sqlite3').Database} [db]
+ * @returns {object[]}
+ */
+function listActiveByRole(role, db = getDb()) {
+  return db.prepare(`SELECT ${COLUMNS} FROM users WHERE role = ? AND is_active = 1`).all(role);
+}
+
+/**
  * @param {{ email: string, passwordHash: string, role: string,
  *           isVerified?: boolean, isActive?: boolean }} data
  * @returns {object} the created row
@@ -58,4 +68,5 @@ module.exports = {
   findById,
   emailExists,
   insertUser,
+  listActiveByRole,
 };

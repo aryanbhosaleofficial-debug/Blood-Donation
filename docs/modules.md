@@ -856,6 +856,92 @@ Responsibilities:
 - ordinary low-count activity does not trigger;
 - system never automatically marks a disaster as confirmed.
 
+## Implementation status — IMPLEMENTED (schema_version 9)
+
+Terminology: the detector finds an **unusual blood-demand pattern** ("surge
+candidate"). It never predicts a disaster, epidemic, accident, or the external
+cause of demand. A candidate is only ever `PENDING` until a human **ADMIN**
+confirms or rejects it.
+
+Backend (`backend/src/modules/surge/`):
+
+- `poisson.service` — `poissonUpperTail(k, lambda) = P(X >= k)`, numerically
+  stable via the pmf recurrence; edge cases: `lambda=0,k=0 → 1`;
+  `lambda=0,k>0 → 0`; `k<=0 → 1`; invalid/NaN/negative-lambda → `NaN`.
+- `surge.window` — rolling analysis window ending "now"
+  (`[now - SURGE_ANALYSIS_WINDOW_MINUTES, now)`), the preceding equal window
+  for velocity, and a **fixed UTC grid bucket** (`floor(now / windowMs)`) that
+  makes the dedupe key deterministic. `localHour(instant, APP_TIMEZONE)` for
+  baseline lookup (DB timestamps stay UTC).
+- `baseline.service` / `baseline.repository` — `demand_baselines`
+  (`UNIQUE(city, blood_group, component, local_hour, is_synthetic)`).
+  `ensureSyntheticBaseline()` writes the deterministic cold-start DEMO data
+  (Ahmedabad × 8 groups × 24 hours; the `DEMO_SURGE_AHMEDABAD_O_NEG` scenario
+  gets a higher lambda). `generateRealBaseline()` aggregates
+  `requests WHERE is_synthetic = 0` over the last `SURGE_MIN_BASELINE_DAYS`
+  by city/group/component/local-hour; `hasSufficientRealBaseline()` gates
+  REAL mode. Synthetic and real rows never mix.
+- `surge-signals.service` — distinct-hospital count, bounded velocity ratio,
+  geographic concentration (hospital **facility** coords only, centroid
+  max-radius vs `SURGE_GEO_RADIUS_KM`, `UNAVAILABLE` when <2 located), recorded
+  matching-inventory units (fresh vs stale via `INVENTORY_STALE_MINUTES`) and
+  recorded depletion during the window, and an explainable 0–100
+  `signalScore` (statistical 60 / distinct 15 / velocity 10 / geo 10 /
+  depletion 5) with LOW/MEDIUM/HIGH level.
+- `surge-detector.service` — trigger:
+  `observed >= SURGE_MIN_REQUEST_COUNT AND poissonUpperTail(observed, lambdaWindow) < SURGE_P_VALUE_THRESHOLD`.
+  On a NEW candidate (deduped by `dedupe_key UNIQUE`), one transaction inserts
+  the `surge_candidates` row (PENDING), queues an ADMIN-only
+  `SURGE_CANDIDATE_DETECTED` outbox notification, and writes a
+  `SURGE_CANDIDATE_DETECTED` audit row (system actor `NULL`). It **never**
+  creates a CONFIRMED state. Group-level failures are isolated.
+- `surge.transaction` — `confirm` (PENDING→CONFIRMED, one `surge_events`
+  ACTIVE row, `SURGE_CONFIRMED` outbox for admins, `SURGE_CANDIDATE_CONFIRMED`
+  audit with admin actor) and `reject` (PENDING→REJECTED, `SURGE_REJECTED`
+  outbox, `SURGE_CANDIDATE_REJECTED` audit). Non-PENDING → `409
+  INVALID_SURGE_STATE`.
+- `surge.service` / `surge.controller` / `surge.routes` / `surge.schemas` /
+  `surge.serializer` — ADMIN-only `GET /api/admin/surge/candidates`,
+  `GET /candidates/:id`, `POST /candidates/:id/confirm`,
+  `POST /candidates/:id/reject`, `GET /events`, `GET /events/:id`. Mounted
+  before `/api/admin`. There is **no public surge API**.
+- `jobs/surge-detector.job` — recurring detection (`SURGE_DETECTOR_INTERVAL_MS`)
+  + slow baseline refresh (`SURGE_BASELINE_REFRESH_INTERVAL_MS`),
+  reentrancy-guarded, `start`/`stop`/`getStatus`/`getLastRunAt`; wired into
+  `server.js` start / `SIGINT` / `SIGTERM`. `surge.service.runStartupTasks()`
+  runs the one-shot startup baseline + detection pass before the job starts.
+- Module 07: `NOTIFICATION_EVENT.SURGE_CANDIDATE_DETECTED / SURGE_CONFIRMED /
+  SURGE_REJECTED` + builders (safe wording; ADMIN recipients only).
+- Module 08: `AUDIT_ACTION.SURGE_CANDIDATE_DETECTED / _CONFIRMED / _REJECTED /
+  SURGE_EVENT_CLOSED`; `/api/admin/metrics` gains a `surge` section
+  (`pendingCandidates`, `confirmedCandidates`, `rejectedCandidates`,
+  `staleCandidates`, `candidatesLast24Hours`, `activeSurgeEvents`) and a
+  `workers.surgeDetector` status — counts only, never candidate evidence.
+- Config (`core/config.js`, `.env.example`): `SURGE_DETECTOR_INTERVAL_MS`,
+  `SURGE_ANALYSIS_WINDOW_MINUTES`, `SURGE_P_VALUE_THRESHOLD`,
+  `SURGE_MIN_REQUEST_COUNT`, `SURGE_MIN_DISTINCT_HOSPITALS`,
+  `SURGE_GEO_RADIUS_KM`, `SURGE_MIN_BASELINE_DAYS`,
+  `SURGE_BASELINE_REFRESH_INTERVAL_MS`, `SURGE_SCORE_CONFIRMATION_HINT`
+  (UI-only hint; never auto-confirms).
+
+Frontend (React + Vite):
+
+- `api/surge.api.js`; `pages/admin/SurgeDashboardPage.jsx`,
+  `SurgeDetailPage.jsx`; `components/admin/SurgeCandidateCard.jsx`,
+  `SurgeEvidencePanel.jsx`, `SurgeStatusBadge.jsx` (+ a separate `DEMO` pill
+  for synthetic data), `SurgeSignalTable.jsx`, `SurgeFilterForm.jsx`. All
+  values render as React text (no raw-HTML injection). Confirm button reads
+  "Confirm Operational Surge" with a dialog stating it does not confirm the
+  external cause. `AppLayout` admin nav + `/admin/surge` +
+  `/admin/surge/candidates/:candidateId` routes (ADMIN-gated by `RoleRoute`).
+
+Tests: 355 backend (`node --test`, +62), 29 frontend (`vitest`, +10),
+production build green, allocation + pledge race scripts green.
+
+Not implemented (Module 10+): demo hardening, seed/backup scripts, AI/LLM
+surge classification, disaster prediction, automated authority/public alerts,
+WebSockets/SSE, PostgreSQL.
+
 ---
 
 # Module 10 — Evaluation and Demo Hardening

@@ -188,7 +188,20 @@ function buildConfig(env) {
     locationCleanupIntervalMs: integer('LOCATION_CLEANUP_INTERVAL_MS', 60000),
     locationCleanupBatchSize: integerInRange('LOCATION_CLEANUP_BATCH_SIZE', 100, 1, 1000),
 
+    // Module 09 — Surge detection (unusual blood-demand pattern detection;
+    // NOT disaster prediction). All thresholds are prototype values and are
+    // not clinically validated.
     surge: {
+      detectorIntervalMs: integer('SURGE_DETECTOR_INTERVAL_MS', 60000),
+      analysisWindowMinutes: integerInRange('SURGE_ANALYSIS_WINDOW_MINUTES', 60, 1, 1440),
+      pValueThreshold: floatInRange('SURGE_P_VALUE_THRESHOLD', 0.01, 0, 1),
+      minRequestCount: integerInRange('SURGE_MIN_REQUEST_COUNT', 5, 1, 100000),
+      minDistinctHospitals: integerInRange('SURGE_MIN_DISTINCT_HOSPITALS', 2, 1, 100000),
+      geoRadiusKm: floatInRange('SURGE_GEO_RADIUS_KM', 15, 0.1, 100000),
+      minBaselineDays: integerInRange('SURGE_MIN_BASELINE_DAYS', 7, 1, 3650),
+      baselineRefreshIntervalMs: integer('SURGE_BASELINE_REFRESH_INTERVAL_MS', 21600000),
+      scoreConfirmationHint: integerInRange('SURGE_SCORE_CONFIRMATION_HINT', 70, 0, 100),
+      // Legacy Module 08 scaffold keys — kept so older .env files stay valid.
       probabilityThreshold: float('SURGE_PROBABILITY_THRESHOLD', 0.01),
       minimumCount: integer('SURGE_MINIMUM_COUNT', 5),
       level2Score: integer('SURGE_LEVEL2_SCORE', 40),

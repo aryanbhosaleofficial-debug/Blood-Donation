@@ -37,6 +37,7 @@ export function AppLayout() {
           { label: 'Organization Verification', path: '/admin/organizations' },
           { label: 'Operational Metrics', path: '/admin/metrics' },
           { label: 'Audit Logs', path: '/admin/audit-logs' },
+          { label: 'Surge Detection', path: '/admin/surge' },
         ];
       default:
         return [];

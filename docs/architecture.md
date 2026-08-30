@@ -653,6 +653,49 @@ Detector -> Recommendation -> Admin Confirm/Reject
 
 The algorithm does not autonomously redistribute blood across a state.
 
+### 16.1 Implemented pipeline (Module 9)
+
+```
+Requests
+   |
+   v
+Recent Demand Aggregation        (rolling window ending "now",
+   |                              REAL = is_synthetic 0, DEMO = is_synthetic 1)
+   v
+Baseline Lookup                  (demand_baselines by city/group/component/
+   |                              local-hour; REAL only when history >=
+   v                              SURGE_MIN_BASELINE_DAYS, else skipped)
+Poisson Anomaly Test             observed >= SURGE_MIN_REQUEST_COUNT AND
+   |                             poissonUpperTail(observed, lambdaWindow) <
+   |                             SURGE_P_VALUE_THRESHOLD
+   +--> Distinct Hospitals
+   +--> Demand Velocity          (current window vs preceding equal window)
+   +--> Geographic Concentration (hospital FACILITY coords only)
+   +--> Inventory Depletion      (recorded fresh units + window depletion)
+   |
+   v
+Surge Candidate  (PENDING)   ── one txn ──> ADMIN outbox notification
+   |                                         + system audit row (actor NULL)
+   v
+ADMIN Review
+   +--> Reject  (PENDING -> REJECTED, audit)
+   +--> Confirm (PENDING -> CONFIRMED)
+           |
+           v
+      Surge Event (ACTIVE)   ── one txn ──> ADMIN outbox notification
+                                            + admin audit row
+```
+
+Deterministic dedupe: `dedupe_key = mode:CITY:group:component:bucketId` where
+`bucketId = floor(nowMs / analysisWindowMs)` — repeated ticks in the same UTC
+grid slot reuse the key (`INSERT OR IGNORE`); the next slot can raise a new
+candidate. The detector only ever writes `PENDING`; a human ADMIN is the only
+path to `CONFIRMED`. Provider delivery happens later in the Module 07 worker,
+never inside a surge transaction.
+
+The background worker set is now: notification worker, request-expiry worker,
+location-cleanup worker, **surge detector**.
+
 ---
 
 ## 17. Deployment Architecture

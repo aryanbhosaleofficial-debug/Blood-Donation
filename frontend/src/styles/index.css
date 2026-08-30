@@ -461,6 +461,26 @@ tr:hover td {
   color: var(--warning);
 }
 
+/* Module 09 — surge candidate / event statuses */
+.status-badge.status-confirmed,
+.status-badge.status-active {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.status-badge.status-rejected,
+.status-badge.status-closed,
+.status-badge.status-stale {
+  background: var(--border);
+  color: var(--muted);
+}
+
+.status-badge.status-demo {
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1px dashed #6d28d9;
+}
+
 /* Request Cards List */
 .request-list {
   display: flex;

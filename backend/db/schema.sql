@@ -1,5 +1,5 @@
 -- Community Blood Donation Matching System
--- Bootstrap through Module 08 (Cleanup, Audit & Operational Metrics) schema.
+-- Bootstrap through Module 09 (Surge Detection) schema.
 --
 -- Module 01 adds `users`; Module 02 adds organization profiles and inventory;
 -- Module 03 adds `requests` and `request_broadcasts`.
@@ -9,6 +9,8 @@
 -- notification outbox (notifications table + worker-driven delivery).
 -- Module 08 adds audit_logs for accountable domain event history, request
 -- expiry cleanup, location cleanup, and operational metrics.
+-- Module 09 adds demand_baselines, surge_candidates, and surge_events for
+-- unusual blood-demand pattern detection (NOT disaster prediction).
 --
 -- This file is executed on every startup and MUST be idempotent.
 
@@ -24,7 +26,7 @@ CREATE TABLE IF NOT EXISTS app_meta (
 
 -- schema_version is upserted so re-running the bootstrap keeps it current.
 INSERT INTO app_meta (key, value)
-VALUES ('schema_version', '8')
+VALUES ('schema_version', '9')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now');
 
 INSERT INTO app_meta (key, value)
@@ -362,3 +364,119 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Module 09: surge detection — unusual blood-demand pattern detection.
+-- This is NOT disaster prediction. The detector only observes request data
+-- inside this platform. A candidate always requires ADMIN review before a
+-- surge_event can exist. Synthetic/demo rows (is_synthetic = 1) are kept
+-- explicitly separate from real operational data (is_synthetic = 0).
+-- ---------------------------------------------------------------------------
+
+-- Expected per-local-hour demand (Poisson lambda) by city / group / component.
+-- is_synthetic = 1 rows are the cold-start demo baseline; is_synthetic = 0 rows
+-- are generated from real non-synthetic request history.
+CREATE TABLE IF NOT EXISTS demand_baselines (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  city           TEXT    NOT NULL,
+  blood_group    TEXT    NOT NULL CHECK (blood_group IN ('A+','A-','B+','B-','AB+','AB-','O+','O-')),
+  component      TEXT    NOT NULL DEFAULT 'RED_CELLS' CHECK (component = 'RED_CELLS'),
+  local_hour     INTEGER NOT NULL CHECK (local_hour >= 0 AND local_hour <= 23),
+  lambda         REAL    NOT NULL CHECK (lambda >= 0),
+  sample_days    INTEGER NOT NULL DEFAULT 0 CHECK (sample_days >= 0),
+  request_count  INTEGER NOT NULL DEFAULT 0 CHECK (request_count >= 0),
+  is_synthetic   INTEGER NOT NULL DEFAULT 0 CHECK (is_synthetic IN (0,1)),
+  generated_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  valid_from     TEXT,
+  valid_to       TEXT,
+  created_at     TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at     TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  UNIQUE (city, blood_group, component, local_hour, is_synthetic)
+);
+
+CREATE INDEX IF NOT EXISTS idx_demand_baselines_lookup
+  ON demand_baselines(city, blood_group, component, local_hour, is_synthetic);
+
+CREATE TRIGGER IF NOT EXISTS trg_demand_baselines_updated_at AFTER UPDATE ON demand_baselines
+FOR EACH ROW BEGIN
+  UPDATE demand_baselines SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = OLD.id;
+END;
+
+-- A statistically unusual demand window awaiting ADMIN review.
+-- status: PENDING -> CONFIRMED | REJECTED ; STALE for abandoned old candidates.
+CREATE TABLE IF NOT EXISTS surge_candidates (
+  id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+  mode                     TEXT    NOT NULL DEFAULT 'REAL' CHECK (mode IN ('REAL','DEMO')),
+  city                     TEXT    NOT NULL,
+  blood_group              TEXT    NOT NULL CHECK (blood_group IN ('A+','A-','B+','B-','AB+','AB-','O+','O-')),
+  component                TEXT    NOT NULL DEFAULT 'RED_CELLS' CHECK (component = 'RED_CELLS'),
+  window_started_at        TEXT    NOT NULL,
+  window_ended_at          TEXT    NOT NULL,
+  observed_request_count   INTEGER NOT NULL CHECK (observed_request_count >= 0),
+  expected_lambda          REAL    NOT NULL CHECK (expected_lambda >= 0),
+  poisson_tail_probability REAL    NOT NULL,
+  distinct_hospital_count  INTEGER NOT NULL DEFAULT 0 CHECK (distinct_hospital_count >= 0),
+  velocity_ratio           REAL    NOT NULL DEFAULT 0,
+  previous_window_count    INTEGER NOT NULL DEFAULT 0 CHECK (previous_window_count >= 0),
+  geographic_signal        TEXT    NOT NULL DEFAULT 'UNAVAILABLE'
+                           CHECK (geographic_signal IN ('CONCENTRATED','SPREAD','UNAVAILABLE')),
+  geographic_radius_km     REAL,
+  recorded_inventory_units INTEGER NOT NULL DEFAULT 0,
+  fresh_inventory_rows     INTEGER NOT NULL DEFAULT 0,
+  stale_inventory_rows     INTEGER NOT NULL DEFAULT 0,
+  inventory_depletion_units INTEGER NOT NULL DEFAULT 0,
+  signal_score             INTEGER NOT NULL DEFAULT 0 CHECK (signal_score >= 0 AND signal_score <= 100),
+  baseline_source          TEXT    NOT NULL DEFAULT 'SYNTHETIC' CHECK (baseline_source IN ('REAL','SYNTHETIC')),
+  status                   TEXT    NOT NULL DEFAULT 'PENDING'
+                           CHECK (status IN ('PENDING','CONFIRMED','REJECTED','STALE')),
+  is_synthetic             INTEGER NOT NULL DEFAULT 0 CHECK (is_synthetic IN (0,1)),
+  dedupe_key               TEXT    NOT NULL UNIQUE,
+  detected_at              TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  reviewed_at              TEXT,
+  reviewed_by_user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  review_note              TEXT,
+  created_at               TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at               TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_surge_candidates_status ON surge_candidates(status, detected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_surge_candidates_group ON surge_candidates(city, blood_group, component);
+CREATE INDEX IF NOT EXISTS idx_surge_candidates_dedupe ON surge_candidates(dedupe_key);
+
+CREATE TRIGGER IF NOT EXISTS trg_surge_candidates_updated_at AFTER UPDATE ON surge_candidates
+FOR EACH ROW BEGIN
+  UPDATE surge_candidates SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = OLD.id;
+END;
+
+-- An ADMIN-CONFIRMED operational blood-demand surge. It confirms only the
+-- internal demand state, never the external real-world cause.
+CREATE TABLE IF NOT EXISTS surge_events (
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  candidate_id         INTEGER NOT NULL UNIQUE REFERENCES surge_candidates(id) ON DELETE CASCADE,
+  city                 TEXT    NOT NULL,
+  blood_group          TEXT    NOT NULL,
+  component            TEXT    NOT NULL DEFAULT 'RED_CELLS',
+  status               TEXT    NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','CLOSED')),
+  confirmed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  confirmed_at         TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  summary              TEXT,
+  admin_note           TEXT,
+  is_synthetic         INTEGER NOT NULL DEFAULT 0 CHECK (is_synthetic IN (0,1)),
+  created_at           TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at           TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  closed_at            TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_surge_events_status ON surge_events(status, confirmed_at DESC);
+
+CREATE TRIGGER IF NOT EXISTS trg_surge_events_updated_at AFTER UPDATE ON surge_events
+FOR EACH ROW BEGIN
+  UPDATE surge_events SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = OLD.id;
+END;
+
+-- Module 09 supporting indexes on requests for recent-window demand queries.
+CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at);
+CREATE INDEX IF NOT EXISTS idx_requests_group_created
+  ON requests(blood_group, component, created_at);
+CREATE INDEX IF NOT EXISTS idx_requests_synthetic_created
+  ON requests(is_synthetic, created_at);

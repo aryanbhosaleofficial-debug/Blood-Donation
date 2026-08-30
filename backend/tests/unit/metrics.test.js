@@ -50,12 +50,24 @@ test('serialize coerces null/undefined aggregate values to 0', () => {
   assert.equal(m.notifications.failed, 0);
 });
 
-test('serialize output contains no PII and no surge fields', () => {
+test('serialize output contains no PII and no raw statistical / surge-evidence fields', () => {
   const s = JSON.stringify(serialize(raw));
+  // No personal data and no raw anomaly-model internals. The Module 09 `surge`
+  // section is aggregate COUNTS only (pending/confirmed/rejected/active) — the
+  // per-candidate evidence (lambda, p-value, score) is never in metrics.
   for (const bad of ['phone', 'email', 'latitude', 'longitude', 'password', 'note',
-    'lambda', 'zScore', 'anomaly', 'surge', 'poisson']) {
-    assert.ok(!s.toLowerCase().includes(bad.toLowerCase()), `must not expose ${bad}`);
+    'lambda', 'zscore', 'anomaly', 'poisson', 'ptail', 'signalscore', 'observedrequests']) {
+    assert.ok(!s.toLowerCase().includes(bad), `must not expose ${bad}`);
   }
+});
+
+test('serialize surge section is aggregate counts only', () => {
+  const m = serialize(raw);
+  assert.deepEqual(Object.keys(m.surge).sort(), [
+    'activeSurgeEvents', 'candidatesLast24Hours', 'confirmedCandidates',
+    'pendingCandidates', 'rejectedCandidates', 'staleCandidates',
+  ]);
+  for (const v of Object.values(m.surge)) assert.equal(typeof v, 'number');
 });
 
 test('serialize byUrgency breakdown is present and numeric', () => {

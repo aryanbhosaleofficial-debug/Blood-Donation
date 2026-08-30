@@ -37,6 +37,8 @@ import { DonorPledgeDetailPage } from '../pages/donor/DonorPledgeDetailPage.jsx'
 import { OrganizationVerificationPage } from '../pages/admin/OrganizationVerificationPage.jsx';
 import { OperationalMetricsPage } from '../pages/admin/OperationalMetricsPage.jsx';
 import { AuditLogsPage } from '../pages/admin/AuditLogsPage.jsx';
+import { SurgeDashboardPage } from '../pages/admin/SurgeDashboardPage.jsx';
+import { SurgeDetailPage } from '../pages/admin/SurgeDetailPage.jsx';
 
 export function AppRouter() {
   return (
@@ -267,6 +269,26 @@ export function AppRouter() {
             <ProtectedRoute>
               <RoleRoute allowedRoles={['ADMIN']}>
                 <AuditLogsPage />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/surge"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={['ADMIN']}>
+                <SurgeDashboardPage />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/surge/candidates/:candidateId"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={['ADMIN']}>
+                <SurgeDetailPage />
               </RoleRoute>
             </ProtectedRoute>
           }

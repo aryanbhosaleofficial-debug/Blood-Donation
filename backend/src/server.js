@@ -24,7 +24,9 @@ const { createApp } = require('./app');
 const notificationWorker = require('./jobs/notification-worker.job');
 const requestExpiryJob = require('./jobs/request-expiry.job');
 const locationCleanupJob = require('./jobs/location-cleanup.job');
+const surgeDetectorJob = require('./jobs/surge-detector.job');
 const cleanupService = require('./modules/cleanup/cleanup.service');
+const surgeService = require('./modules/surge/surge.service');
 
 function start() {
   // --- 2. Database ------------------------------------------------------
@@ -56,6 +58,9 @@ function start() {
       cleanupService.runStartupSweeps();
       requestExpiryJob.start();
       locationCleanupJob.start();
+      // Module 09: ensure baselines, run one detection pass, then start the job.
+      surgeService.runStartupTasks();
+      surgeDetectorJob.start();
     }
   });
 
@@ -64,6 +69,7 @@ function start() {
     notificationWorker.stop();
     requestExpiryJob.stop();
     locationCleanupJob.stop();
+    surgeDetectorJob.stop();
     server.close(() => {
       closeDatabase();
       process.exit(0);

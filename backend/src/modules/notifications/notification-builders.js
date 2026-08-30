@@ -210,6 +210,44 @@ function buildPledgeDeferredForDonorNotification({ pledgeId, requestId }) {
   };
 }
 
+// --- Module 09: Surge detection (ADMIN recipients only) ---
+
+function buildSurgeCandidateDetectedNotification({ candidateId, city, bloodGroup, component, recipientUserId }) {
+  return {
+    eventType: NOTIFICATION_EVENT.SURGE_CANDIDATE_DETECTED,
+    entityType: NOTIFICATION_ENTITY.SURGE_CANDIDATE,
+    entityId: candidateId,
+    dedupeKey: `SURGE_CANDIDATE_DETECTED:cand=${candidateId}:user=${recipientUserId}`,
+    title: 'Unusual Blood-Demand Pattern Detected',
+    message: `Unusual ${bloodGroup} ${component} demand detected in ${city}. Admin review is required. This is not a disaster prediction.`,
+    payload: { candidateId, city, bloodGroup, component },
+  };
+}
+
+function buildSurgeConfirmedNotification({ candidateId, eventId, city, bloodGroup, component, recipientUserId }) {
+  return {
+    eventType: NOTIFICATION_EVENT.SURGE_CONFIRMED,
+    entityType: NOTIFICATION_ENTITY.SURGE_EVENT,
+    entityId: eventId,
+    dedupeKey: `SURGE_CONFIRMED:cand=${candidateId}:user=${recipientUserId}`,
+    title: 'Operational Blood-Demand Surge Confirmed',
+    message: `An operational blood-demand surge has been confirmed for ${city} / ${bloodGroup} / ${component}. This confirms the internal demand state only, not an external cause.`,
+    payload: { candidateId, eventId, city, bloodGroup, component },
+  };
+}
+
+function buildSurgeRejectedNotification({ candidateId, city, bloodGroup, component, recipientUserId }) {
+  return {
+    eventType: NOTIFICATION_EVENT.SURGE_REJECTED,
+    entityType: NOTIFICATION_ENTITY.SURGE_CANDIDATE,
+    entityId: candidateId,
+    dedupeKey: `SURGE_REJECTED:cand=${candidateId}:user=${recipientUserId}`,
+    title: 'Surge Candidate Rejected',
+    message: `The surge candidate for ${city} / ${bloodGroup} / ${component} was reviewed and rejected by an administrator.`,
+    payload: { candidateId, city, bloodGroup, component },
+  };
+}
+
 module.exports = {
   buildRequestBroadcastNotification,
   buildAllocationReservedNotification,
@@ -226,4 +264,7 @@ module.exports = {
   buildPledgeCancelledForHospitalNotification,
   buildPledgeArrivedForHospitalNotification,
   buildPledgeDeferredForDonorNotification,
+  buildSurgeCandidateDetectedNotification,
+  buildSurgeConfirmedNotification,
+  buildSurgeRejectedNotification,
 };

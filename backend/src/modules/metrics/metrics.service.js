@@ -24,6 +24,7 @@ function getJobRefs() {
     notificationWorker: require('../../jobs/notification-worker.job'),
     requestExpiryJob: require('../../jobs/request-expiry.job'),
     locationCleanupJob: require('../../jobs/location-cleanup.job'),
+    surgeDetectorJob: require('../../jobs/surge-detector.job'),
   };
 }
 
@@ -51,6 +52,10 @@ function gatherMetrics() {
   // Worker status (in-process memory)
   const jobs = getJobRefs();
 
+  // Module 09 — surge aggregates (counts only; no candidate evidence here).
+  // eslint-disable-next-line global-require
+  const surge = require('../surge/surge.service').surgeMetrics();
+
   return serializer.serialize({
     requests,
     allocations,
@@ -59,6 +64,7 @@ function gatherMetrics() {
     alerts,
     pledges,
     notifications,
+    surge,
     cleanup: {
       pastDueActiveRequests,
       expiredLocationSessionsRemaining,
@@ -69,6 +75,7 @@ function gatherMetrics() {
       notification: jobs.notificationWorker.getStatus(),
       requestExpiry: jobs.requestExpiryJob.getStatus(),
       locationCleanup: jobs.locationCleanupJob.getStatus(),
+      surgeDetector: jobs.surgeDetectorJob.getStatus(),
     },
   });
 }

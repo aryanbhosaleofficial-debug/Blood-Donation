@@ -13,7 +13,7 @@
 
 const n = (v) => Number(v ?? 0);
 
-function serialize({ requests, allocations, inventory, donors, alerts, pledges, notifications, cleanup, workers }) {
+function serialize({ requests, allocations, inventory, donors, alerts, pledges, notifications, surge, cleanup, workers }) {
   return {
     requests: {
       total: n(requests.total),
@@ -63,6 +63,14 @@ function serialize({ requests, allocations, inventory, donors, alerts, pledges, 
       failed: n(notifications.failed),
       unread: n(notifications.unread),
     },
+    surge: {
+      pendingCandidates: n(surge && surge.pendingCandidates),
+      confirmedCandidates: n(surge && surge.confirmedCandidates),
+      rejectedCandidates: n(surge && surge.rejectedCandidates),
+      staleCandidates: n(surge && surge.staleCandidates),
+      candidatesLast24Hours: n(surge && surge.candidatesLast24Hours),
+      activeSurgeEvents: n(surge && surge.activeSurgeEvents),
+    },
     cleanup: {
       pastDueActiveRequests: n(cleanup.pastDueActiveRequests),
       expiredLocationSessionsRemaining: n(cleanup.expiredLocationSessionsRemaining),
@@ -73,6 +81,7 @@ function serialize({ requests, allocations, inventory, donors, alerts, pledges, 
       notification: String(workers.notification),
       requestExpiry: String(workers.requestExpiry),
       locationCleanup: String(workers.locationCleanup),
+      surgeDetector: String(workers.surgeDetector),
     },
   };
 }

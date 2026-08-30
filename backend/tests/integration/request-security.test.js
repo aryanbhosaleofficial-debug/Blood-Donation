@@ -132,7 +132,7 @@ test('Y: Module 00 health + pragmas still hold', async () => {
   const res = await srv.client().get('/api/health');
   assert.equal(res.status, 200);
   assert.equal(res.json.data.status, 'ok');
-  assert.equal(res.json.data.schemaVersion, '8');
+  assert.equal(res.json.data.schemaVersion, '9');
   const db = getDb();
   assert.equal(db.pragma('foreign_keys', { simple: true }), 1);
   assert.equal(String(db.pragma('journal_mode', { simple: true })).toLowerCase(), 'wal');

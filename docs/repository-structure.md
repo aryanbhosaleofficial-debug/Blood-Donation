@@ -194,16 +194,15 @@ community-blood-donation-system/
 │   │   │   │   ├── metrics.repository.js
 │   │   │   │   └── metrics.serializer.js
 │   │   │   │
-│   │   │   ├── surge/
-│   │   │   │   ├── surge.routes.js
-│   │   │   │   ├── surge.controller.js
-│   │   │   │   ├── surge.service.js
-│   │   │   │   ├── surge.repository.js
-│   │   │   │   ├── baseline.service.js
-│   │   │   │   ├── poisson.js
-│   │   │   │   ├── scoring.service.js
-│   │   │   │   ├── escalation.service.js
-│   │   │   │   └── surge.constants.js
+│   │   │   ├── surge/                       # Module 9
+│   │   │   │   ├── surge.routes.js  surge.controller.js  surge.service.js
+│   │   │   │   ├── surge.repository.js  surge.schemas.js  surge.serializer.js
+│   │   │   │   ├── surge.transaction.js     # confirm / reject (atomic)
+│   │   │   │   ├── surge.constants.js  surge.window.js
+│   │   │   │   ├── poisson.service.js       # poissonUpperTail(k, lambda)
+│   │   │   │   ├── baseline.service.js  baseline.repository.js
+│   │   │   │   ├── surge-signals.service.js # distinct/velocity/geo/inventory + score
+│   │   │   │   └── surge-detector.service.js
 │   │   │   │
 │   │   │   ├── admin/
 │   │   │   │   ├── admin.routes.js
@@ -219,7 +218,7 @@ community-blood-donation-system/
 │   │   │   ├── request-expiry.job.js
 │   │   │   ├── location-cleanup.job.js
 │   │   │   ├── notification-worker.job.js
-│   │   │   └── surge-analysis.job.js
+│   │   │   └── surge-detector.job.js        # Module 9
 │   │   │
 │   │   └── utils/
 │   │       ├── time.js
@@ -278,7 +277,8 @@ community-blood-donation-system/
 │   │   │   ├── pledges.api.js
 │   │   │   ├── admin.api.js
 │   │   │   ├── metrics.api.js               # Module 8
-│   │   │   └── audit.api.js                 # Module 8
+│   │   │   ├── audit.api.js                 # Module 8
+│   │   │   └── surge.api.js                 # Module 9
 │   │   │
 │   │   ├── context/
 │   │   │   ├── AuthContext.jsx
@@ -330,7 +330,9 @@ community-blood-donation-system/
 │   │   │   └── admin/
 │   │   │       ├── OrganizationVerificationPage.jsx
 │   │   │       ├── OperationalMetricsPage.jsx   # Module 8
-│   │   │       └── AuditLogsPage.jsx            # Module 8
+│   │   │       ├── AuditLogsPage.jsx            # Module 8
+│   │   │       ├── SurgeDashboardPage.jsx       # Module 9
+│   │   │       └── SurgeDetailPage.jsx          # Module 9
 │   │   │
 │   │   ├── components/
 │   │   │   ├── common/
@@ -354,11 +356,11 @@ community-blood-donation-system/
 │   │   │   │   ├── AlertCard.jsx
 │   │   │   │   ├── PledgeControl.jsx
 │   │   │   │   └── LocationSharingControl.jsx
-│   │   │   └── admin/                        # Module 8
-│   │   │       ├── MetricsCard.jsx
-│   │   │       ├── MetricsSection.jsx
-│   │   │       ├── AuditLogTable.jsx
-│   │   │       └── AuditFilterForm.jsx
+│   │   │   └── admin/                        # Modules 8–9
+│   │   │       ├── MetricsCard.jsx  MetricsSection.jsx        # Module 8
+│   │   │       ├── AuditLogTable.jsx  AuditFilterForm.jsx     # Module 8
+│   │   │       ├── SurgeCandidateCard.jsx  SurgeEvidencePanel.jsx  # Module 9
+│   │   │       └── SurgeStatusBadge.jsx  SurgeSignalTable.jsx  SurgeFilterForm.jsx  # Module 9
 │   │   │
 │   │   ├── utils/
 │   │   │   ├── dates.js
@@ -375,6 +377,7 @@ community-blood-donation-system/
 │   │   ├── blood-bank.test.jsx
 │   │   ├── donor.test.jsx
 │   │   ├── admin.test.jsx                    # Module 8 (metrics + audit pages)
+│   │   ├── surge.test.jsx                    # Module 9 (surge dashboard + detail)
 │   │   └── security.test.jsx
 │   │
 │   ├── index.html

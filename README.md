@@ -188,10 +188,14 @@ The system identifies **potential donors** only. Final medical suitability remai
 11. Frontend hardening
 12. CEP mock crisis evaluation
 
-**Implemented so far:** items 1–9 (Modules 0–8). Database `schema_version` 8.
-Background workers: notification, request-expiry, location-cleanup — with
-startup sweeps. Admin APIs: `GET /api/admin/metrics`, `GET /api/admin/audit-logs`
-(both ADMIN-only, read-only). Surge detection (item 10+) is **not** implemented.
+**Implemented so far:** items 1–10 (Modules 0–9). Database `schema_version` 9.
+Background workers: notification, request-expiry, location-cleanup, **surge
+detector** — with startup passes/sweeps. Admin APIs: `GET /api/admin/metrics`,
+`GET /api/admin/audit-logs`, and `GET/POST /api/admin/surge/*` (all ADMIN-only;
+surge mutations are CSRF-protected). Surge detection finds **unusual
+blood-demand patterns** for human ADMIN review — it does **not** predict
+disasters and never auto-confirms. Frontend hardening / CEP demo (item 11+) is
+**not** implemented.
 
 ---
 

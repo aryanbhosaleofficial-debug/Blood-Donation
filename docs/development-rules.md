@@ -696,3 +696,33 @@ Required limitations include:
 - Synthetic / demo data (`is_synthetic = 1`) stays distinguishable from
   real operational counts — never silently merged.
 - Metrics are not medical outcomes and not surge / disaster predictions.
+
+## Rule G1 — Surge detection discipline (Module 9)
+
+- Surge detection must remain **explainable** — a simple multi-signal
+  detector (Poisson upper-tail primary signal + minimum count + distinct
+  hospitals + velocity + geographic concentration + inventory depletion).
+  No black-box / ML / LLM model.
+- Do **not** auto-confirm candidates. The detector only writes `PENDING`;
+  only a human ADMIN can create a `CONFIRMED` surge event, even for an
+  extremely small p-value.
+- A confirmed surge is an **internal operational blood-demand state**. It
+  never asserts an external cause (accident, disaster, epidemic) and never
+  triggers a public / donor / hospital broadcast.
+- Do not mix synthetic and real baseline data. `is_synthetic = 1`
+  (SYNTHETIC / DEMO) is used only in DEMO mode; REAL mode uses
+  `is_synthetic = 0` baselines and is skipped when real history is shorter
+  than `SURGE_MIN_BASELINE_DAYS`.
+- The detector must not inspect request notes, patient data, donor rows, or
+  donor live coordinates. Geographic signals use hospital **facility**
+  coordinates only.
+- Do not treat stale inventory rows (older than `INVENTORY_STALE_MINUTES`)
+  as current evidence.
+- Never label the Poisson upper-tail probability as a "probability of a
+  disaster". It is the probability of observing this many or more requests
+  under the configured baseline model.
+- Admin review mutations (`confirm` / `reject`) require CSRF + Origin
+  validation and ADMIN role. There is no public surge API.
+- The surge detector job must not overlap ticks (`isRunning` guard) and a
+  detector failure must be logged with safe context and must not crash the
+  server. Time-bucket dedupe must be deterministic.
