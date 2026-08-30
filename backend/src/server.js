@@ -21,6 +21,7 @@ try {
 const logger = require('./core/logger');
 const { getDb, pingDatabase, closeDatabase } = require('./core/database');
 const { createApp } = require('./app');
+const notificationWorker = require('./jobs/notification-worker.job');
 
 function start() {
   // --- 2. Database ------------------------------------------------------
@@ -44,10 +45,15 @@ function start() {
       env: config.nodeEnv,
       origin: config.appOrigin,
     });
+    // Start notification worker after server is listening (non-blocking).
+    if (!config.isTest) {
+      notificationWorker.start();
+    }
   });
 
   const shutdown = (signal) => {
     logger.info('shutting down', { signal });
+    notificationWorker.stop();
     server.close(() => {
       closeDatabase();
       process.exit(0);

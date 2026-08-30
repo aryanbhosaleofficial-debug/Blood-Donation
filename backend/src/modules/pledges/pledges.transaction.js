@@ -6,6 +6,8 @@ const { ConflictError, NotFoundError } = require('../../core/errors');
 const repo = require('./pledges.repository');
 const locationsRepo = require('../locations/locations.repository');
 const { PLEDGE_STATUS, PLEDGE_ERROR, pledgeCapacity } = require('./pledges.constants');
+const { queueNotification } = require('../notifications/notifications.outbox');
+const builders = require('../notifications/notification-builders');
 
 const conflict = (message, code) => new ConflictError(message, { code });
 const pastExpiry = (value, now) => Number.isFinite(Date.parse(value)) && Date.parse(value) <= now;
@@ -19,6 +21,17 @@ function createReference(db) {
 }
 
 function createPledgeTransactions(db = getDb()) {
+  /** Fetch hospital user_id for a request (needed for notification recipient). */
+  function hospitalUserIdForRequest(requestId) {
+    const row = db.prepare('SELECT h.user_id FROM requests r JOIN hospitals h ON h.id=r.hospital_id WHERE r.id=?').get(requestId);
+    return row ? row.user_id : null;
+  }
+
+  /** Fetch hospital context (name, city) for pledge notifications. */
+  function hospitalContextForRequest(requestId) {
+    return db.prepare('SELECT h.name, h.city FROM requests r JOIN hospitals h ON h.id=r.hospital_id WHERE r.id=?').get(requestId) ?? {};
+  }
+
   const pledgeTransaction = db.transaction(({ userId, alertId, now = Date.now() }) => {
     const donor = repo.donorForUser(db, userId);
     if (!donor) throw new NotFoundError('Donor profile not found.', { code: 'DONOR_PROFILE_NOT_FOUND' });
@@ -57,6 +70,29 @@ function createPledgeTransactions(db = getDb()) {
     if (repo.closeAlert(db, alertId).changes !== 1) {
       throw conflict('This donor alert changed while pledging.', PLEDGE_ERROR.ALERT_NOT_ACTIONABLE);
     }
+    // Notify donor: pledge confirmation
+    const hospitalCtx = hospitalContextForRequest(alert.request_id);
+    queueNotification(db, {
+      recipientUserId: userId,
+      ...builders.buildPledgeConfirmedForDonorNotification({
+        pledgeId: pledge.id,
+        requestId: alert.request_id,
+        hospitalName: hospitalCtx.name ?? 'the hospital',
+        city: hospitalCtx.city ?? '',
+      }),
+    });
+    // Notify hospital: new pledge (using public_reference only — no donor identity)
+    const hospitalUserId = hospitalUserIdForRequest(alert.request_id);
+    if (hospitalUserId) {
+      queueNotification(db, {
+        recipientUserId: hospitalUserId,
+        ...builders.buildPledgeCreatedForHospitalNotification({
+          pledgeId: pledge.id,
+          requestId: alert.request_id,
+          publicReference: pledge.public_reference,
+        }),
+      });
+    }
     return pledge;
   });
 
@@ -70,6 +106,18 @@ function createPledgeTransactions(db = getDb()) {
       throw conflict('The pledge state changed.', PLEDGE_ERROR.INVALID_STATE);
     }
     locationsRepo.deleteForPledge(db, pledgeId);
+    // Notify hospital: pledge cancelled (using public_reference only)
+    const hospitalUserId = hospitalUserIdForRequest(pledge.request_id);
+    if (hospitalUserId) {
+      queueNotification(db, {
+        recipientUserId: hospitalUserId,
+        ...builders.buildPledgeCancelledForHospitalNotification({
+          pledgeId,
+          requestId: pledge.request_id,
+          publicReference: pledge.public_reference,
+        }),
+      });
+    }
     return pledgeId;
   });
 
@@ -87,6 +135,18 @@ function createPledgeTransactions(db = getDb()) {
     }
     if (repo.setArrived(db, pledgeId).changes !== 1) {
       throw conflict('The pledge state changed.', PLEDGE_ERROR.INVALID_STATE);
+    }
+    // Notify hospital: donor arrived (using public_reference only)
+    const hospitalUserId = hospitalUserIdForRequest(pledge.request_id);
+    if (hospitalUserId) {
+      queueNotification(db, {
+        recipientUserId: hospitalUserId,
+        ...builders.buildPledgeArrivedForHospitalNotification({
+          pledgeId,
+          requestId: pledge.request_id,
+          publicReference: pledge.public_reference,
+        }),
+      });
     }
     return pledgeId;
   });

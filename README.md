@@ -105,7 +105,7 @@ Covered    Donor Fallback
 | [Architecture](docs/architecture.md) | High-level architecture, security boundaries, deployment, concurrency, and infrastructure |
 | [Technical Design](docs/design.md) | Detailed data model, API design, state model, algorithms, privacy, and error handling |
 | [Workflow](docs/workflow.md) | End-to-end workflows for hospital, blood bank, donor, admin, notification, cleanup, and surge flows |
-| [Modules & Development Phases](docs/modules.md) | Backend/frontend modules divided into implementation phases |
+| [System Modules](docs/modules.md) | Backend/frontend modules organized into numbered modules |
 | [Safety & Risk Controls](docs/safety.md) | Medical, privacy, cybersecurity, concurrency, notification, and operational safeguards |
 | [Development Rules](docs/development-rules.md) | Mandatory engineering, security, privacy, API, database, and demo rules |
 | [Repository Structure](docs/repository-structure.md) | Professional backend/frontend/module folder structure |

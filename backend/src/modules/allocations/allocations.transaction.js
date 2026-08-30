@@ -7,6 +7,8 @@ const repo = require('./allocations.repository');
 const policy = require('./allocations.policy');
 const donorAlertsRepo = require('../donor-alerts/donor-alerts.repository');
 const pledgesRepo = require('../pledges/pledges.repository');
+const { queueNotification } = require('../notifications/notifications.outbox');
+const builders = require('../notifications/notification-builders');
 const {
   ALLOCATION_ERROR, ALLOCATION_STATUS, REQUEST_STATUS, RED_CELLS,
   remainingUnits, reservableUnits,
@@ -65,10 +67,44 @@ function createAllocationTransactions(db = getDb()) {
       throw err;
     }
     const activeAllocated = repo.activeTotal(db, requestId);
-    if (activeAllocated >= request.units_needed) {
+    const nowCovered = activeAllocated >= request.units_needed;
+    if (nowCovered) {
       repo.setRequestStatus(db, requestId, REQUEST_STATUS.COVERED);
       donorAlertsRepo.closeForRequest(db, requestId);
+      // Defer pledged donors — notify them
+      const deferredDonorUserIds = db.prepare(`
+        SELECT DISTINCT u.id AS user_id FROM donor_pledges p
+        JOIN donors d ON d.id = p.donor_id
+        JOIN users u ON u.id = d.user_id
+        WHERE p.request_id = ? AND p.status = 'PLEDGED'
+      `).all(requestId).map((r) => r.user_id);
       pledgesRepo.deferForRequest(db, requestId);
+      for (const donorUserId of deferredDonorUserIds) {
+        queueNotification(db, {
+          recipientUserId: donorUserId,
+          ...builders.buildPledgeDeferredForDonorNotification({ pledgeId: null, requestId }),
+          dedupeKey: `DONOR_PLEDGE_DEFERRED:req=${requestId}:donorUser=${donorUserId}`,
+        });
+      }
+    }
+    // Notify hospital: reservation + coverage if applicable
+    const hospitalUserId = repo.hospitalUserIdForRequest(db, requestId);
+    if (hospitalUserId) {
+      queueNotification(db, {
+        recipientUserId: hospitalUserId,
+        ...builders.buildAllocationReservedNotification({
+          allocationId: allocation.id,
+          requestId,
+          unitsReserved: quantity,
+          bankName: bank.name,
+        }),
+      });
+      if (nowCovered) {
+        queueNotification(db, {
+          recipientUserId: hospitalUserId,
+          ...builders.buildRequestCoveredNotification({ requestId, hospitalName: null }),
+        });
+      }
     }
     return { allocation, request: repo.requestById(db, requestId), inventory: repo.inventoryFor(db, bank.id, request.blood_group, RED_CELLS), activeAllocated };
   });
@@ -81,7 +117,27 @@ function createAllocationTransactions(db = getDb()) {
     if (repo.setAllocationStatus(db, allocationId, ALLOCATION_STATUS.RELEASED).changes !== 1) throw conflict('The allocation state changed.', ALLOCATION_ERROR.INVALID_STATE);
     const request = repo.requestById(db, allocation.request_id);
     const activeAllocated = repo.activeTotal(db, allocation.request_id);
-    if (request.status === REQUEST_STATUS.COVERED && activeAllocated < request.units_needed) repo.setRequestStatus(db, request.id, REQUEST_STATUS.OPEN);
+    const reopened = request.status === REQUEST_STATUS.COVERED && activeAllocated < request.units_needed;
+    if (reopened) repo.setRequestStatus(db, request.id, REQUEST_STATUS.OPEN);
+    // Notify hospital
+    const hospitalUserId = repo.hospitalUserIdForRequest(db, allocation.request_id);
+    if (hospitalUserId) {
+      queueNotification(db, {
+        recipientUserId: hospitalUserId,
+        ...builders.buildAllocationReleasedHospitalNotification({
+          allocationId,
+          requestId: allocation.request_id,
+          unitsReserved: allocation.units_reserved,
+          bankName: bank.name,
+        }),
+      });
+      if (reopened) {
+        queueNotification(db, {
+          recipientUserId: hospitalUserId,
+          ...builders.buildRequestReopenedNotification({ requestId: allocation.request_id, allocationId }),
+        });
+      }
+    }
     return { allocation: repo.joinedById(db, allocationId), request: repo.requestById(db, allocation.request_id), activeAllocated };
   });
 
@@ -90,7 +146,21 @@ function createAllocationTransactions(db = getDb()) {
     const allocation = policy.assertOwned(repo.ownedAllocation(db, allocationId, bank.id));
     policy.assertReserved(allocation);
     if (repo.setAllocationStatus(db, allocationId, ALLOCATION_STATUS.COMPLETED).changes !== 1) throw conflict('The allocation state changed.', ALLOCATION_ERROR.INVALID_STATE);
-    return repo.joinedById(db, allocationId);
+    const joined = repo.joinedById(db, allocationId);
+    // Notify hospital
+    const hospitalUserId = repo.hospitalUserIdForRequest(db, allocation.request_id);
+    if (hospitalUserId) {
+      queueNotification(db, {
+        recipientUserId: hospitalUserId,
+        ...builders.buildAllocationCompletedNotification({
+          allocationId,
+          requestId: allocation.request_id,
+          unitsReserved: allocation.units_reserved,
+          bankName: bank.name,
+        }),
+      });
+    }
+    return joined;
   });
 
   const cancelRequestTransaction = db.transaction(({ hospitalId, actorUserId, requestId }) => {
@@ -106,6 +176,32 @@ function createAllocationTransactions(db = getDb()) {
     repo.closeBroadcasts(db, requestId);
     donorAlertsRepo.closeForRequest(db, requestId);
     pledgesRepo.closeForRequest(db, requestId);
+    // Notify bank users that had broadcasts
+    const bankUserIds = db.prepare(`
+      SELECT DISTINCT u.id AS user_id FROM request_broadcasts rb
+      JOIN blood_banks bb ON bb.id = rb.bank_id
+      JOIN users u ON u.id = bb.user_id
+      WHERE rb.request_id = ?
+    `).all(requestId).map((r) => r.user_id);
+    for (const uid of bankUserIds) {
+      queueNotification(db, {
+        recipientUserId: uid,
+        ...builders.buildRequestCancelledNotification({ requestId, recipientUserId: uid }),
+      });
+    }
+    // Notify donor users that had pledges
+    const donorUserIds = db.prepare(`
+      SELECT DISTINCT u.id AS user_id FROM donor_pledges p
+      JOIN donors d ON d.id = p.donor_id
+      JOIN users u ON u.id = d.user_id
+      WHERE p.request_id = ?
+    `).all(requestId).map((r) => r.user_id);
+    for (const uid of donorUserIds) {
+      queueNotification(db, {
+        recipientUserId: uid,
+        ...builders.buildRequestCancelledNotification({ requestId, recipientUserId: uid }),
+      });
+    }
     return repo.requestById(db, requestId);
   });
 

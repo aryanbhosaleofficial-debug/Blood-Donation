@@ -144,7 +144,7 @@ test('N: schema bootstrap is idempotent (re-open the same file)', () => {
   const { openDatabase } = require('../../src/core/database');
   const second = openDatabase({ path: process.env.DATABASE_PATH });
   try {
-    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '6');
+    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '7');
   } finally {
     second.close();
   }

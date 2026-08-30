@@ -1,11 +1,12 @@
 -- Community Blood Donation Matching System
--- Bootstrap through Module 06 (Donor Pledges, Temporary Location & ETA) schema.
+-- Bootstrap through Module 07 (Transactional Notification Outbox) schema.
 --
 -- Module 01 adds `users`; Module 02 adds organization profiles and inventory;
 -- Module 03 adds `requests` and `request_broadcasts`.
 -- Module 04 adds atomic bank allocations; Module 05 adds donor profiles and
 -- private in-app donor alerts. Module 06 adds donor pledges and temporary
--- request-bound location sessions. Later notification domains are absent.
+-- request-bound location sessions. Module 07 adds the transactional
+-- notification outbox (notifications table + worker-driven delivery).
 --
 -- This file is executed on every startup and MUST be idempotent.
 
@@ -21,7 +22,7 @@ CREATE TABLE IF NOT EXISTS app_meta (
 
 -- schema_version is upserted so re-running the bootstrap keeps it current.
 INSERT INTO app_meta (key, value)
-VALUES ('schema_version', '6')
+VALUES ('schema_version', '7')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now');
 
 INSERT INTO app_meta (key, value)
@@ -289,3 +290,51 @@ CREATE TABLE IF NOT EXISTS donor_location_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_location_sessions_request ON donor_location_sessions(request_id);
 CREATE INDEX IF NOT EXISTS idx_location_sessions_expiry ON donor_location_sessions(expires_at);
+
+-- ---------------------------------------------------------------------------
+-- Module 07: transactional notification outbox
+-- ---------------------------------------------------------------------------
+-- `status` is the transport/delivery state; `read_at` is the separate UI
+-- read flag.  Workers only process QUEUED rows (next_attempt_at IS NULL or
+-- past).  The UNIQUE constraint on (recipient_user_id, channel, dedupe_key)
+-- prevents duplicate logical notifications from being queued twice.
+CREATE TABLE IF NOT EXISTS notifications (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipient_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  channel           TEXT    NOT NULL DEFAULT 'IN_APP'
+                    CHECK (channel IN ('IN_APP', 'EMAIL', 'TELEGRAM', 'FCM')),
+  event_type        TEXT    NOT NULL,
+  entity_type       TEXT,
+  entity_id         INTEGER,
+  dedupe_key        TEXT    NOT NULL,
+  title             TEXT    NOT NULL,
+  message           TEXT    NOT NULL,
+  payload_json      TEXT    NOT NULL DEFAULT '{}',
+  status            TEXT    NOT NULL DEFAULT 'QUEUED'
+                    CHECK (status IN ('QUEUED', 'SENT', 'DELIVERED', 'ACKNOWLEDGED', 'FAILED')),
+  attempt_count     INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+  max_attempts      INTEGER NOT NULL DEFAULT 3 CHECK (max_attempts >= 1),
+  next_attempt_at   TEXT,
+  last_error        TEXT,
+  queued_at         TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  sent_at           TEXT,
+  delivered_at      TEXT,
+  acknowledged_at   TEXT,
+  read_at           TEXT,
+  failed_at         TEXT,
+  created_at        TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at        TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  UNIQUE (recipient_user_id, channel, dedupe_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications(status);
+CREATE INDEX IF NOT EXISTS idx_notifications_next_attempt ON notifications(next_attempt_at)
+  WHERE status = 'QUEUED';
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(recipient_user_id, read_at)
+  WHERE read_at IS NULL;
+
+CREATE TRIGGER IF NOT EXISTS trg_notifications_updated_at AFTER UPDATE ON notifications
+FOR EACH ROW BEGIN
+  UPDATE notifications SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = OLD.id;
+END;

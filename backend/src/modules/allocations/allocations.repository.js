@@ -37,4 +37,10 @@ function reservedForRequest(db,requestId){return db.prepare("SELECT a.*,r.blood_
 function completedCount(db,requestId){return db.prepare("SELECT COUNT(*) n FROM request_allocations WHERE request_id=? AND status='COMPLETED'").get(requestId).n;}
 function closeBroadcasts(db,requestId){return db.prepare("UPDATE request_broadcasts SET status='CLOSED',responded_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE request_id=? AND status<>'CLOSED'").run(requestId);}
 
-module.exports={bankForUser,broadcastExists,requestById,allocationForBankRequest,activeTotal,inventoryFor,decrementInventory,restoreInventory,insertAdjustment,insertAllocation,ownedAllocation,setAllocationStatus,setRequestStatus,joinedById,listForBank,listForHospitalRequest,requestOwnedByHospital,reservedForRequest,completedCount,closeBroadcasts};
+/** Resolve hospital user_id for a request (needed for notification recipients). */
+function hospitalUserIdForRequest(db, requestId) {
+  const row = db.prepare('SELECT h.user_id FROM requests r JOIN hospitals h ON h.id=r.hospital_id WHERE r.id=?').get(requestId);
+  return row ? row.user_id : null;
+}
+
+module.exports={bankForUser,broadcastExists,requestById,allocationForBankRequest,activeTotal,inventoryFor,decrementInventory,restoreInventory,insertAdjustment,insertAllocation,ownedAllocation,setAllocationStatus,setRequestStatus,joinedById,listForBank,listForHospitalRequest,requestOwnedByHospital,reservedForRequest,completedCount,closeBroadcasts,hospitalUserIdForRequest};

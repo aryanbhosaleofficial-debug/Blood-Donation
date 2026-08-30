@@ -21,6 +21,8 @@ const serializer = require('./requests.serializer');
 const { createAllocationTransactions } = require('../allocations/allocations.transaction');
 const donorAlertsRepo = require('../donor-alerts/donor-alerts.repository');
 const pledgesRepo = require('../pledges/pledges.repository');
+const { queueNotification } = require('../notifications/notifications.outbox');
+const builders = require('../notifications/notification-builders');
 const {
   REQUEST_ERROR,
   REQUEST_STATUS,
@@ -58,7 +60,7 @@ function create(sessionUser, input) {
     const existing = repo.findByClientId(getDb(), hospital.id, input.clientRequestId);
     if (existing) {
       if (!payloadMatches(existing, input)) throw idempotencyConflict();
-      return { row: existing, broadcastCount: broadcastsRepo.countForRequest(existing.id), replay: true };
+      return { row: existing, broadcastCount: broadcastsRepo.countForRequest(existing.id), replay: true, banks: [] };
     }
 
     let row;
@@ -81,7 +83,7 @@ function create(sessionUser, input) {
       if (err && String(err.code || '').startsWith('SQLITE_CONSTRAINT')) {
         const raced = repo.findByClientId(getDb(), hospital.id, input.clientRequestId);
         if (raced && payloadMatches(raced, input)) {
-          return { row: raced, broadcastCount: broadcastsRepo.countForRequest(raced.id), replay: true };
+          return { row: raced, broadcastCount: broadcastsRepo.countForRequest(raced.id), replay: true, banks: [] };
         }
         throw idempotencyConflict();
       }
@@ -90,8 +92,26 @@ function create(sessionUser, input) {
 
     // Broadcast fan-out inside the same transaction: a DB failure here rolls the
     // whole request back. Zero eligible banks is fine (0 rows, still commits).
-    const broadcastCount = broadcastsService.createForRequest(getDb(), row.id);
-    return { row, broadcastCount, replay: false };
+    const banks = broadcastsRepo.eligibleBanksWithDetails(getDb());
+    for (const bank of banks) {
+      broadcastsRepo.insert(getDb(), row.id, bank.id);
+    }
+    // Queue REQUEST_BROADCAST_RECEIVED notification for each bank (inside transaction).
+    for (const bank of banks) {
+      queueNotification(getDb(), {
+        recipientUserId: bank.user_id,
+        ...builders.buildRequestBroadcastNotification({
+          requestId: row.id,
+          bloodGroup: row.blood_group,
+          urgency: row.urgency,
+          component: row.component,
+          hospitalName: hospital.name,
+          city: hospital.city,
+        }),
+        dedupeKey: `REQUEST_BROADCAST_RECEIVED:req=${row.id}:bank=${bank.user_id}`,
+      });
+    }
+    return { row, broadcastCount: banks.length, replay: false, banks };
   })();
 
   logger.info('emergency request created', {
@@ -131,14 +151,54 @@ function getOne(sessionUser, requestId) {
 }
 
 function transition(sessionUser, requestId, targetStatus, allowedFrom) {
-  const transaction = getDb().transaction(() => {
+  const db = getDb();
+  let hospitalUserId = sessionUser.id;
+  let participantUserIds = [];
+
+  const transaction = db.transaction(() => {
     const row = repo.findById(requestId);
     policy.assertHospitalOwnership(sessionUser, row);
     policy.assertTransitionAllowed(row.status, allowedFrom);
-    const next = repo.close(getDb(), requestId, targetStatus);
-    broadcastsService.closeForRequest(getDb(), requestId);
-    donorAlertsRepo.closeForRequest(getDb(), requestId);
-    pledgesRepo.closeForRequest(getDb(), requestId);
+    hospitalUserId = sessionUser.id;
+    const next = repo.close(db, requestId, targetStatus);
+    broadcastsService.closeForRequest(db, requestId);
+    donorAlertsRepo.closeForRequest(db, requestId);
+    // Collect affected pledge donor user IDs before closing pledges
+    participantUserIds = db.prepare(`
+      SELECT DISTINCT u.id AS user_id FROM donor_pledges p
+      JOIN donors d ON d.id = p.donor_id
+      JOIN users u ON u.id = d.user_id
+      WHERE p.request_id = ? AND p.status IN ('PLEDGED','ARRIVED','DEFERRED','CLOSED')
+    `).all(requestId).map((r) => r.user_id);
+    pledgesRepo.closeForRequest(db, requestId);
+
+    // Queue notifications inside transaction
+    const buildFn = targetStatus === REQUEST_STATUS.CANCELLED
+      ? builders.buildRequestCancelledNotification
+      : builders.buildRequestCompletedNotification;
+
+    // Notify hospital user
+    queueNotification(db, {
+      recipientUserId: hospitalUserId,
+      ...buildFn({ requestId, recipientUserId: hospitalUserId }),
+    });
+
+    // Notify affected participants (bank users via broadcasts, donor users)
+    const bankUserIds = db.prepare(`
+      SELECT DISTINCT u.id AS user_id FROM request_broadcasts rb
+      JOIN blood_banks bb ON bb.id = rb.bank_id
+      JOIN users u ON u.id = bb.user_id
+      WHERE rb.request_id = ?
+    `).all(requestId).map((r) => r.user_id);
+
+    for (const uid of [...new Set([...bankUserIds, ...participantUserIds])]) {
+      if (uid === hospitalUserId) continue; // already notified
+      queueNotification(db, {
+        recipientUserId: uid,
+        ...buildFn({ requestId, recipientUserId: uid }),
+      });
+    }
+
     return next;
   });
   const updated = transaction.immediate();

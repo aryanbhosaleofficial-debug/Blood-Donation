@@ -10,6 +10,7 @@
  * Module 04: atomic blood-bank allocations and coverage transitions.
  * Module 05: donor profiles, potential matching, and private in-app alerts.
  * Module 06: atomic donor pledges, temporary location, and coarse ETA bands.
+ * Module 07: transactional notification outbox, worker, and notification REST APIs.
  *
  * Middleware order matters:
  *   security headers
@@ -46,6 +47,7 @@ const allocationRoutes = require('./modules/allocations/allocations.routes');
 const donorRoutes = require('./modules/donors/donors.routes');
 const donorAlertRoutes = require('./modules/donor-alerts/donor-alerts.routes');
 const pledgeRoutes = require('./modules/pledges/pledges.routes');
+const notificationRoutes = require('./modules/notifications/notifications.routes');
 
 const FRONTEND_DIR = path.resolve(__dirname, '..', '..', 'frontend');
 
@@ -126,6 +128,7 @@ function createApp({ mountExtra } = {}) {
   app.use(`${API_PREFIX}/donor/alerts`, donorAlertRoutes);
   app.use(`${API_PREFIX}/donor/pledges`, pledgeRoutes);
   app.use(`${API_PREFIX}/donor`, donorRoutes);
+  app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 
   // Test-only protected routes (e.g. for CSRF / role assertions). Never mounted
   // in a normal run - the test harness passes this in.

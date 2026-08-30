@@ -1,4 +1,4 @@
-# Modules and Implementation Phases
+# System Modules and Implementation
 
 ## Related Workflow
 
@@ -6,13 +6,13 @@ See [System Workflow](workflow.md) for the end-to-end operational flow connectin
 
 ## 1. Purpose
 
-This document divides the system into implementation phases. Each phase contains backend and frontend modules, dependencies, expected deliverables, and minimum tests.
+This document organizes the system into numbered modules. Each module contains backend and frontend responsibilities, dependencies, expected deliverables, and minimum tests.
 
-The phases are ordered to reduce rework and ensure that security and data integrity exist before user-facing features depend on them.
+The modules are ordered to reduce rework and ensure that security and data integrity exist before user-facing features depend on them.
 
 ---
 
-# Phase 0 — Project Foundation
+# Module 0 — Project Foundation
 
 ## Goal
 
@@ -101,7 +101,7 @@ Responsibilities:
 
 ---
 
-# Phase 1 — Identity and Security
+# Module 1 — Identity and Security
 
 ## Goal
 
@@ -191,7 +191,7 @@ Responsibilities:
 
 ---
 
-# Phase 2 — Organization and Inventory Foundation
+# Module 2 — Organization and Inventory Foundation
 
 ## Goal
 
@@ -280,7 +280,7 @@ Responsibilities:
 
 ---
 
-# Phase 3 — Emergency Requests
+# Module 3 — Emergency Requests
 
 ## Goal
 
@@ -359,7 +359,7 @@ Responsibilities:
 
 ---
 
-# Phase 4 — Atomic Blood-Bank Allocation
+# Module 4 — Atomic Blood-Bank Allocation
 
 ## Goal
 
@@ -425,7 +425,7 @@ Responsibilities:
 
 ---
 
-# Phase 5 — Donor Registration and Matching
+# Module 5 — Donor Registration and Matching
 
 ## Goal
 
@@ -509,7 +509,7 @@ Responsibilities:
 
 ---
 
-# Phase 6 — Atomic Donor Pledges and Privacy
+# Module 6 — Atomic Donor Pledges and Privacy
 
 ## Goal
 
@@ -591,7 +591,7 @@ Responsibilities:
 
 ---
 
-# Phase 7 — Notification Outbox and Polling
+# Module 7 — Notification Outbox and Polling
 
 ## Goal
 
@@ -655,7 +655,7 @@ Responsibilities:
 
 ---
 
-# Phase 8 — Cleanup, Audit, and Metrics
+# Module 8 — Cleanup, Audit, and Metrics
 
 ## Goal
 
@@ -708,7 +708,7 @@ Responsibilities:
 
 Responsibilities:
 
-- Phase 5 charts/tables;
+- Module 5 charts/tables;
 - synthetic-data exclusion indicator.
 
 ## Deliverables
@@ -725,7 +725,7 @@ Responsibilities:
 
 ---
 
-# Phase 9 — Surge Detection
+# Module 9 — Surge Detection
 
 ## Goal
 
@@ -791,7 +791,7 @@ Responsibilities:
 
 ---
 
-# Phase 10 — Evaluation and Demo Hardening
+# Module 10 — Evaluation and Demo Hardening
 
 ## Goal
 
@@ -844,21 +844,21 @@ Prepare a reliable CEP evaluation independent of network/phone failures.
 
 ---
 
-# Workflow Integration by Phase
+# Workflow Integration by Module
 
 The detailed runtime flow is documented in [workflow.md](workflow.md).
 
-Phase mapping:
+Module mapping:
 
-| Workflow Area | Primary Phase |
+| Workflow Area | Primary Module |
 |---|---|
-| Login, session, CSRF, authorization | Phase 1 |
-| Bank inventory | Phase 2 |
-| Emergency request creation | Phase 3 |
-| Atomic bank allocation | Phase 4 |
-| Donor discovery | Phase 5 |
-| Atomic pledge + location privacy | Phase 6 |
-| Notification outbox | Phase 7 |
-| Expiry, cleanup, audit, metrics | Phase 8 |
-| Surge detection/admin confirmation | Phase 9 |
-| Mock crisis / race tests | Phase 10 |
+| Login, session, CSRF, authorization | Module 1 |
+| Bank inventory | Module 2 |
+| Emergency request creation | Module 3 |
+| Atomic bank allocation | Module 4 |
+| Donor discovery | Module 5 |
+| Atomic pledge + location privacy | Module 6 |
+| Notification outbox | Module 7 |
+| Expiry, cleanup, audit, metrics | Module 8 |
+| Surge detection/admin confirmation | Module 9 |
+| Mock crisis / race tests | Module 10 |

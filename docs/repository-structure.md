@@ -805,6 +805,6 @@ data
 docs
 ```
 
-Then add domain modules phase-by-phase according to `Modules.md`.
+Then add domain modules module-by-module according to `modules.md`.
 
 This prevents the repository from becoming a large set of empty folders before the code exists.

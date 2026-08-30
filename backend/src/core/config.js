@@ -177,6 +177,9 @@ function buildConfig(env) {
     etaAssumedSpeedKmh: floatInRange('ETA_ASSUMED_SPEED_KMH', 25, 1, 200),
     etaPrepBufferMinutes: floatInRange('ETA_PREP_BUFFER_MINUTES', 5, 0, 120),
     notificationMaxAttempts: integer('NOTIFICATION_MAX_ATTEMPTS', 3),
+    notificationWorkerIntervalMs: integer('NOTIFICATION_WORKER_INTERVAL_MS', 1000),
+    notificationWorkerBatchSize: integerInRange('NOTIFICATION_WORKER_BATCH_SIZE', 25, 1, 1000),
+    notificationRetryBaseMs: integer('NOTIFICATION_RETRY_BASE_MS', 5000),
     pollIntervalMs: integer('POLL_INTERVAL_MS', 3000),
 
     surge: {

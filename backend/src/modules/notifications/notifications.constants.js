@@ -1,0 +1,56 @@
+'use strict';
+
+/**
+ * modules/notifications/notifications.constants
+ *
+ * Centralised event-type vocabulary and other notification constants.
+ * No module may scatter arbitrary event-type strings; all must be imported
+ * from here.
+ */
+
+const NOTIFICATION_CHANNEL = Object.freeze({
+  IN_APP: 'IN_APP',
+  EMAIL: 'EMAIL',
+  TELEGRAM: 'TELEGRAM',
+  FCM: 'FCM',
+});
+
+const NOTIFICATION_STATUS = Object.freeze({
+  QUEUED: 'QUEUED',
+  SENT: 'SENT',
+  DELIVERED: 'DELIVERED',
+  ACKNOWLEDGED: 'ACKNOWLEDGED',
+  FAILED: 'FAILED',
+});
+
+const NOTIFICATION_EVENT = Object.freeze({
+  // Module 03 - Emergency Requests
+  REQUEST_BROADCAST_RECEIVED: 'REQUEST_BROADCAST_RECEIVED',
+  // Module 04 - Atomic Allocations
+  BANK_ALLOCATION_RESERVED: 'BANK_ALLOCATION_RESERVED',
+  BANK_ALLOCATION_RELEASED: 'BANK_ALLOCATION_RELEASED',
+  BANK_ALLOCATION_COMPLETED: 'BANK_ALLOCATION_COMPLETED',
+  // Module 04 - Coverage Transitions
+  REQUEST_COVERED: 'REQUEST_COVERED',
+  REQUEST_REOPENED: 'REQUEST_REOPENED',
+  // Module 03 - Lifecycle Closure
+  REQUEST_CANCELLED: 'REQUEST_CANCELLED',
+  REQUEST_COMPLETED: 'REQUEST_COMPLETED',
+  // Module 05 - Donor Alerts
+  DONOR_ALERT_CREATED: 'DONOR_ALERT_CREATED',
+  // Module 06 - Pledges
+  DONOR_PLEDGE_CREATED: 'DONOR_PLEDGE_CREATED',
+  DONOR_PLEDGE_CONFIRMED: 'DONOR_PLEDGE_CONFIRMED',
+  DONOR_PLEDGE_CANCELLED: 'DONOR_PLEDGE_CANCELLED',
+  DONOR_PLEDGE_ARRIVED: 'DONOR_PLEDGE_ARRIVED',
+  DONOR_PLEDGE_DEFERRED: 'DONOR_PLEDGE_DEFERRED',
+});
+
+const NOTIFICATION_ENTITY = Object.freeze({
+  REQUEST: 'REQUEST',
+  ALLOCATION: 'ALLOCATION',
+  DONOR_ALERT: 'DONOR_ALERT',
+  PLEDGE: 'PLEDGE',
+});
+
+module.exports = { NOTIFICATION_CHANNEL, NOTIFICATION_STATUS, NOTIFICATION_EVENT, NOTIFICATION_ENTITY };

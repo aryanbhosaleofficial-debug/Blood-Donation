@@ -29,6 +29,21 @@ function eligibleBankIds(db) {
     .map((r) => r.id);
 }
 
+/** Returns eligible banks with user_id for notification recipient resolution. */
+function eligibleBanksWithDetails(db) {
+  return db
+    .prepare(
+      `SELECT b.id, b.user_id, b.name, b.city
+         FROM blood_banks b
+         JOIN users u ON u.id = b.user_id
+        WHERE u.role = 'BLOOD_BANK'
+          AND u.is_active = 1
+          AND u.is_verified = 1
+        ORDER BY b.id`,
+    )
+    .all();
+}
+
 function insert(db, requestId, bankId) {
   return db
     .prepare(`INSERT INTO request_broadcasts (request_id, bank_id) VALUES (?, ?)`)
@@ -67,6 +82,7 @@ function closeForRequest(db, requestId) {
 
 module.exports = {
   eligibleBankIds,
+  eligibleBanksWithDetails,
   insert,
   countForRequest,
   listForRequest,
