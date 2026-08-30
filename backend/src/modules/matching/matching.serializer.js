@@ -1,0 +1,1 @@
+'use strict';function hospitalFallbackResult(requestId,newAlertsCreated,totalActiveAlerts){return{requestId,potentialDonorsAlerted:totalActiveAlerts,newAlertsCreated,totalActiveAlerts,fallbackStatus:totalActiveAlerts>0?'ACTIVE':'NO_POTENTIAL_MATCHES'};}module.exports={hospitalFallbackResult};

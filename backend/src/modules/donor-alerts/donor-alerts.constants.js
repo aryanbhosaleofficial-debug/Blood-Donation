@@ -1,0 +1,1 @@
+'use strict';const ALERT_STATUS=Object.freeze({ACTIVE:'ACTIVE',VIEWED:'VIEWED',DISMISSED:'DISMISSED',CLOSED:'CLOSED'});module.exports={ALERT_STATUS,ALERT_STATUS_VALUES:Object.freeze(Object.values(ALERT_STATUS))};

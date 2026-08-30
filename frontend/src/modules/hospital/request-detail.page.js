@@ -1,15 +1,16 @@
 /**
  * frontend/modules/hospital/request-detail.page
  *
- * Summary + timestamps + note + cancel/complete actions for one owned request.
- * Module 03 shows no bank allocations, donor pledges, or ETA (those modules do
- * not exist yet).
+ * Summary, bank allocations, aggregate donor fallback status, timestamps, and
+ * lifecycle actions for one owned request. Donor identities, pledges, and ETA
+ * are intentionally outside this view and Module 05's scope.
  */
 
 import { ApiError } from '../../core/api-client.js';
 import { hospitalService, getSelectedRequestId } from './hospital.service.js';
 import { field, statusBadge, formatTime } from './components/request-status.js';
 import { hospitalAllocationList } from './components/allocation-list.js';
+import { donorFallbackStatus } from './components/donor-fallback-status.js';
 
 export async function renderRequestDetail(outlet, ctx) {
   const navigate = (ctx && ctx.navigate) || (() => {});
@@ -52,6 +53,8 @@ export async function renderRequestDetail(outlet, ctx) {
         const covered = document.createElement('p'); covered.textContent = 'Coverage target reached. This does not indicate clinical readiness.'; body.append(covered);
       }
       body.append(hospitalAllocationList(allocationData.allocations));
+      body.append(donorFallbackStatus(r.donorFallback));
+      if(r.status==='OPEN'&&r.remainingBankUnits>0){const fallback=document.createElement('button');fallback.type='button';fallback.textContent='Activate Potential Donor Fallback';fallback.addEventListener('click',async()=>{fallback.disabled=true;try{const result=await hospitalService.activateDonorFallback(id);status.textContent=`Potential donor alerts assigned: ${result.totalActiveAlerts}`;await load();}catch(e){status.textContent=e.message;fallback.disabled=false;}});body.append(fallback);}
 
       if (r.status === 'OPEN' || r.status === 'COVERED') {
         body.append(actionButton('Cancel request', () => hospitalService.cancelRequest(id), load));

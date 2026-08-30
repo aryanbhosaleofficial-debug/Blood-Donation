@@ -74,6 +74,12 @@ async function createBank({ email, password, verified = true, active = true } = 
   return { user, bank };
 }
 
+async function createDonor({email,password,active=true,bloodGroup='O-',availability='AVAILABLE',availabilityUpdatedAt=new Date().toISOString(),city='Pune',locality='Central',pinCode='411001',approxLatitude=null,approxLongitude=null,nextContactAfter=null,displayName}={}){
+  const user=await createTestUser({email:email||`donor_${rand()}@example.com`,password,role:'DONOR',isVerified:0,isActive:active?1:0});
+  const info=getDb().prepare(`INSERT INTO donors(user_id,display_name,blood_group,phone_private,email_private,city,locality,pin_code,approx_latitude,approx_longitude,availability_status,availability_updated_at,next_contact_after) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(user.id,displayName||`Donor ${user.id}`,bloodGroup,'9999999999',user.email,city,locality,pinCode,approxLatitude,approxLongitude,availability,availabilityUpdatedAt,nextContactAfter);
+  return{user,donor:getDb().prepare('SELECT * FROM donors WHERE id=?').get(Number(info.lastInsertRowid))};
+}
+
 /** Simulate an admin verify/revoke: keep users + profile in sync. */
 function setVerified(userId, verified) {
   const db = getDb();
@@ -100,4 +106,4 @@ function requestPayload(overrides = {}) {
   };
 }
 
-module.exports = { createHospital, createBank, setVerified, setActive, requestPayload, rand };
+module.exports = { createHospital, createBank, createDonor, setVerified, setActive, requestPayload, rand };

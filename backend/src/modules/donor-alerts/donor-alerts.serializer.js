@@ -1,0 +1,3 @@
+'use strict';
+function serialize(r,now=Date.now()){const past=Number.isFinite(Date.parse(r.expires_at))&&Date.parse(r.expires_at)<=now;const requestOpen=r.request_status==='OPEN';return{id:r.id,request:{id:r.request_id,bloodGroup:r.blood_group,component:r.component,remainingRequirement:Math.max(r.units_needed-Number(r.bank_units_allocated||0),0),urgency:r.urgency,createdAt:r.request_created_at,expiresAt:r.expires_at,status:r.request_status},hospital:{name:r.hospital_name,city:r.hospital_city,locality:r.hospital_locality},status:r.status,createdAt:r.created_at,viewedAt:r.viewed_at,closedAt:r.closed_at,isPastExpiry:past,isActionable:!past&&requestOpen&&['ACTIVE','VIEWED'].includes(r.status)};}
+module.exports={serialize};

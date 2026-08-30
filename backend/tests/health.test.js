@@ -38,7 +38,7 @@ test('GET /api/health returns 200 with status ok and a live db', async () => {
     const body = await res.json();
     assert.equal(body.data.status, 'ok');
     assert.equal(body.data.db, 'ok');
-    assert.equal(body.data.schemaVersion, '4');
+    assert.equal(body.data.schemaVersion, '5');
     assert.ok(body.data.timestamp);
   });
 });

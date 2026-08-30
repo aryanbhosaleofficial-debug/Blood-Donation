@@ -43,6 +43,10 @@ function hospitalView(row, now = Date.now()) {
     hospitalId: row.hospital_id,
     isSynthetic: row.is_synthetic === 1,
     scenarioId: row.scenario_id ?? null,
+    donorFallback: {
+      status: Number(row.donor_alert_actionable || 0) > 0 ? 'ACTIVE' : Number(row.donor_alert_total || 0) > 0 ? 'CLOSED' : 'INACTIVE',
+      potentialDonorsAlerted: Number(row.donor_alert_actionable || 0),
+    },
   };
 }
 

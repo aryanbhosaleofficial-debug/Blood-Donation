@@ -1,10 +1,10 @@
 -- Community Blood Donation Matching System
--- Bootstrap through Module 04 (Atomic Blood-Bank Allocation) schema.
+-- Bootstrap through Module 05 (Donor Management & Potential Matching) schema.
 --
 -- Module 01 adds `users`; Module 02 adds organization profiles and inventory;
 -- Module 03 adds `requests` and `request_broadcasts`.
--- Module 04 adds atomic bank allocations. Later donor, notification, and surge
--- domains are intentionally absent.
+-- Module 04 adds atomic bank allocations; Module 05 adds donor profiles and
+-- private in-app donor alerts. Later pledge/location/notification domains are absent.
 --
 -- This file is executed on every startup and MUST be idempotent.
 
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS app_meta (
 
 -- schema_version is upserted so re-running the bootstrap keeps it current.
 INSERT INTO app_meta (key, value)
-VALUES ('schema_version', '4')
+VALUES ('schema_version', '5')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now');
 
 INSERT INTO app_meta (key, value)
@@ -196,3 +196,50 @@ CREATE TABLE IF NOT EXISTS request_allocations (
 CREATE INDEX IF NOT EXISTS idx_request_allocations_request ON request_allocations(request_id);
 CREATE INDEX IF NOT EXISTS idx_request_allocations_bank ON request_allocations(bank_id);
 CREATE INDEX IF NOT EXISTS idx_request_allocations_status ON request_allocations(status);
+
+-- ---------------------------------------------------------------------------
+-- Module 05: donor self-profile and private in-app potential-donor alerts
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS donors (
+  id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id                 INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  display_name            TEXT NOT NULL,
+  blood_group             TEXT NOT NULL CHECK (blood_group IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
+  phone_private           TEXT,
+  email_private           TEXT,
+  city                    TEXT NOT NULL,
+  locality                TEXT,
+  pin_code                TEXT,
+  approx_latitude         REAL CHECK (approx_latitude IS NULL OR (approx_latitude >= -90 AND approx_latitude <= 90)),
+  approx_longitude        REAL CHECK (approx_longitude IS NULL OR (approx_longitude >= -180 AND approx_longitude <= 180)),
+  availability_status     TEXT NOT NULL DEFAULT 'UNKNOWN' CHECK (availability_status IN ('AVAILABLE', 'UNAVAILABLE', 'UNKNOWN')),
+  availability_updated_at TEXT,
+  last_donation_date      TEXT,
+  next_contact_after      TEXT,
+  created_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_donors_blood_group ON donors(blood_group);
+CREATE INDEX IF NOT EXISTS idx_donors_availability ON donors(availability_status, availability_updated_at);
+CREATE INDEX IF NOT EXISTS idx_donors_city ON donors(city);
+
+CREATE TRIGGER IF NOT EXISTS trg_donors_updated_at AFTER UPDATE ON donors
+FOR EACH ROW BEGIN
+  UPDATE donors SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = OLD.id;
+END;
+
+CREATE TABLE IF NOT EXISTS donor_alerts (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+  donor_id   INTEGER NOT NULL REFERENCES donors(id) ON DELETE CASCADE,
+  status     TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'VIEWED', 'DISMISSED', 'CLOSED')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  viewed_at  TEXT,
+  closed_at  TEXT,
+  UNIQUE(request_id, donor_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_donor_alerts_request ON donor_alerts(request_id);
+CREATE INDEX IF NOT EXISTS idx_donor_alerts_donor ON donor_alerts(donor_id);
+CREATE INDEX IF NOT EXISTS idx_donor_alerts_status ON donor_alerts(status);

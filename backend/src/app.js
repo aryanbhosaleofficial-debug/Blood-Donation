@@ -8,6 +8,7 @@
  * Module 02: organization profiles, verification, and blood-bank inventory.
  * Module 03: emergency requests and broadcast visibility.
  * Module 04: atomic blood-bank allocations and coverage transitions.
+ * Module 05: donor profiles, potential matching, and private in-app alerts.
  *
  * Middleware order matters:
  *   security headers
@@ -41,6 +42,8 @@ const adminRoutes = require('./modules/admin/admin.routes');
 const requestRoutes = require('./modules/requests/requests.routes');
 const bankRequestRoutes = require('./modules/broadcasts/broadcasts.routes');
 const allocationRoutes = require('./modules/allocations/allocations.routes');
+const donorRoutes = require('./modules/donors/donors.routes');
+const donorAlertRoutes = require('./modules/donor-alerts/donor-alerts.routes');
 
 const FRONTEND_DIR = path.resolve(__dirname, '..', '..', 'frontend');
 
@@ -118,6 +121,8 @@ function createApp({ mountExtra } = {}) {
   app.use(`${API_PREFIX}/admin`, adminRoutes);
   app.use(`${API_PREFIX}/requests`, requestRoutes);
   app.use(`${API_PREFIX}/allocations`, allocationRoutes);
+  app.use(`${API_PREFIX}/donor/alerts`, donorAlertRoutes);
+  app.use(`${API_PREFIX}/donor`, donorRoutes);
 
   // Test-only protected routes (e.g. for CSRF / role assertions). Never mounted
   // in a normal run - the test harness passes this in.

@@ -21,6 +21,9 @@ test('builds config from a valid environment with sensible defaults', () => {
   assert.equal(cfg.dbBusyTimeoutMs, 5000);
   assert.equal(cfg.inventoryMaxUnits, 1000);
   assert.equal(cfg.inventoryStaleMinutes, 30);
+  assert.equal(cfg.availabilityFreshnessDays, 7);
+  assert.equal(cfg.donorDiscoveryRadiusKm, 25);
+  assert.equal(cfg.donorMatchLimit, 50);
   assert.equal(cfg.surge.minimumCount, 5);
   assert.equal(typeof cfg.databasePath, 'string');
   assert.ok(cfg.databasePath.endsWith('app.db'));
@@ -35,6 +38,8 @@ test('honours overrides and coerces types', () => {
     SURGE_PROBABILITY_THRESHOLD: '0.005',
     INVENTORY_MAX_UNITS: '2500',
     INVENTORY_STALE_MINUTES: '45',
+    DONOR_DISCOVERY_RADIUS_KM: '40',
+    DONOR_MATCH_LIMIT: '25',
   });
   assert.equal(cfg.nodeEnv, 'production');
   assert.equal(cfg.isProduction, true);
@@ -43,6 +48,8 @@ test('honours overrides and coerces types', () => {
   assert.equal(cfg.surge.probabilityThreshold, 0.005);
   assert.equal(cfg.inventoryMaxUnits, 2500);
   assert.equal(cfg.inventoryStaleMinutes, 45);
+  assert.equal(cfg.donorDiscoveryRadiusKm, 40);
+  assert.equal(cfg.donorMatchLimit, 25);
 });
 
 test('fails with a clear error when SESSION_SECRET is missing', () => {

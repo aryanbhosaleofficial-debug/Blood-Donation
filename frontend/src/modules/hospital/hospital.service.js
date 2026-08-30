@@ -19,4 +19,5 @@ export const hospitalService = {
   cancelRequest: (id) => apiClient.post(`/requests/${id}/cancel`, {}),
   completeRequest: (id) => apiClient.post(`/requests/${id}/complete`, {}),
   requestAllocations: (id) => apiClient.get(`/requests/${id}/allocations`),
+  activateDonorFallback: (id) => apiClient.post(`/requests/${id}/donor-fallback`, {}),
 };

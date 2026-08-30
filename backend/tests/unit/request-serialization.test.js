@@ -39,6 +39,7 @@ test('hospitalView exposes the documented fields and nothing sensitive', () => {
       'urgency', 'status', 'note', 'createdAt', 'expiresAt', 'closedAt', 'isPastExpiry',
       'hospitalId', 'isSynthetic', 'scenarioId',
       'bankUnitsAllocated', 'remainingBankUnits',
+      'donorFallback',
     ].sort(),
   );
   assert.equal(out.isPastExpiry, false);

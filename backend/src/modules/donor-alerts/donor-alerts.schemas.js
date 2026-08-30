@@ -1,0 +1,1 @@
+'use strict';const{z}=require('zod');const alertIdParamSchema=z.object({alertId:z.coerce.number().int().positive()}).strict();const emptyBodySchema=z.object({}).strict();module.exports={alertIdParamSchema,emptyBodySchema};

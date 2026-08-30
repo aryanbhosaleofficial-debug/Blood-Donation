@@ -4,8 +4,8 @@
  * modules/requests/requests.service
  *
  * Emergency-request business rules: idempotent creation (+ transactional
- * broadcast fan-out), listing, detail, and the OPEN -> CANCELLED / COMPLETED
- * lifecycle.
+ * broadcast fan-out), listing, detail, and the covered/cancelled/completed
+ * lifecycle, including closure of any actionable donor alerts.
  */
 
 const config = require('../../core/config');
@@ -19,6 +19,7 @@ const repo = require('./requests.repository');
 const policy = require('./requests.policy');
 const serializer = require('./requests.serializer');
 const { createAllocationTransactions } = require('../allocations/allocations.transaction');
+const donorAlertsRepo = require('../donor-alerts/donor-alerts.repository');
 const {
   REQUEST_ERROR,
   REQUEST_STATUS,
@@ -135,6 +136,7 @@ function transition(sessionUser, requestId, targetStatus, allowedFrom) {
     policy.assertTransitionAllowed(row.status, allowedFrom);
     const next = repo.close(getDb(), requestId, targetStatus);
     broadcastsService.closeForRequest(getDb(), requestId);
+    donorAlertsRepo.closeForRequest(getDb(), requestId);
     return next;
   });
   const updated = transaction.immediate();

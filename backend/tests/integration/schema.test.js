@@ -104,13 +104,32 @@ test('04: request_allocations has state, units, uniqueness and foreign keys', ()
   assert.deepEqual(targets,new Set(['requests','blood_banks']));
 });
 
+test('05: donors and donor_alerts enforce ownership, state, blood group and uniqueness', () => {
+  const db = getDb();
+  const donorSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='donors'").get().sql;
+  const alertSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='donor_alerts'").get().sql;
+
+  assert.match(donorSql, /user_id\s+INTEGER NOT NULL UNIQUE/i);
+  assert.match(donorSql, /blood_group IN \('A\+', 'A-', 'B\+', 'B-', 'AB\+', 'AB-', 'O\+', 'O-'\)/);
+  assert.match(donorSql, /availability_status IN \('AVAILABLE', 'UNAVAILABLE', 'UNKNOWN'\)/);
+  assert.match(donorSql, /approx_latitude >= -90 AND approx_latitude <= 90/);
+  assert.match(donorSql, /approx_longitude >= -180 AND approx_longitude <= 180/);
+  assert.match(alertSql, /status IN \('ACTIVE', 'VIEWED', 'DISMISSED', 'CLOSED'\)/);
+  assert.match(alertSql, /UNIQUE\s*\(request_id, donor_id\)/);
+
+  const donorTargets = new Set(db.prepare('PRAGMA foreign_key_list(donors)').all().map((row) => row.table));
+  const alertTargets = new Set(db.prepare('PRAGMA foreign_key_list(donor_alerts)').all().map((row) => row.table));
+  assert.deepEqual(donorTargets, new Set(['users']));
+  assert.deepEqual(alertTargets, new Set(['donors', 'requests']));
+});
+
 test('N: schema bootstrap is idempotent (re-open the same file)', () => {
   // getDb() already ran the schema once; open a second connection to the same
   // file to prove CREATE ... IF NOT EXISTS + upsert do not error.
   const { openDatabase } = require('../../src/core/database');
   const second = openDatabase({ path: process.env.DATABASE_PATH });
   try {
-    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '4');
+    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '5');
   } finally {
     second.close();
   }

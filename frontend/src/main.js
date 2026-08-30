@@ -25,6 +25,11 @@ import { renderIncomingRequests } from './modules/bank/incoming-requests.page.js
 import { renderBankRequestDetail } from './modules/bank/request-detail.page.js';
 import { renderAllocationHistory } from './modules/bank/allocation-history.page.js';
 import { renderAdminVerification } from './modules/admin/verification.page.js';
+import { renderDonorDashboard } from './modules/donor/dashboard.page.js';
+import { renderDonorProfile } from './modules/donor/profile.page.js';
+import { renderDonorAvailability } from './modules/donor/availability.page.js';
+import { renderDonorAlerts } from './modules/donor/alerts.page.js';
+import { renderDonorAlertDetail } from './modules/donor/alert-detail.page.js';
 
 function row(label, value) {
   const el = document.createElement('div');
@@ -48,7 +53,7 @@ function renderBadge() {
 
 function renderNav(navigate) {
   const nav=document.getElementById('role-nav'); nav.replaceChildren(); const user=getUser(); if(!user)return;
-  const links=user.role==='HOSPITAL'?[['Dashboard','/hospital/dashboard'],['Profile','/hospital/profile'],['Create Request','/hospital/create-request'],['My Requests','/hospital/requests']]:user.role==='BLOOD_BANK'?[['Profile','/bank/profile'],['Inventory','/bank/inventory'],['Incoming Requests','/bank/incoming-requests'],['My Allocations','/bank/allocations']]:user.role==='ADMIN'?[['Organization Verification','/admin/organizations']]:[['Home','/']];
+  const links=user.role==='HOSPITAL'?[['Dashboard','/hospital/dashboard'],['Profile','/hospital/profile'],['Create Request','/hospital/create-request'],['My Requests','/hospital/requests']]:user.role==='BLOOD_BANK'?[['Profile','/bank/profile'],['Inventory','/bank/inventory'],['Incoming Requests','/bank/incoming-requests'],['My Allocations','/bank/allocations']]:user.role==='ADMIN'?[['Organization Verification','/admin/organizations']]:[['Dashboard','/donor/dashboard'],['Profile','/donor/profile'],['Availability','/donor/availability'],['Alerts','/donor/alerts']];
   for(const [label,path] of links){const a=document.createElement('a');a.href=`#${path}`;a.textContent=label;a.addEventListener('click',e=>{e.preventDefault();navigate(path);});nav.append(a);}
 }
 
@@ -97,7 +102,8 @@ function homeView(outlet, navigate) {
   h.textContent = 'Signed in';
   const card = document.createElement('div');
   card.className = 'card';
-  card.append(row('Email', user.email), row('Role', user.role), row('Verified', user.isVerified ? 'yes' : 'no'));
+  card.append(row('Email', user.email), row('Role', user.role));
+  if(user.role!=='DONOR')card.append(row('Organization verified', user.isVerified ? 'yes' : 'no'));
 
   const logoutBtn = document.createElement('button');
   logoutBtn.type = 'button';
@@ -157,6 +163,11 @@ async function boot() {
       '/bank/request-detail': (el) => renderBankRequestDetail(el, { navigate: (p) => router.navigate(p) }),
       '/bank/allocations': renderAllocationHistory,
       '/admin/organizations': renderAdminVerification,
+      '/donor/dashboard': renderDonorDashboard,
+      '/donor/profile': renderDonorProfile,
+      '/donor/availability': renderDonorAvailability,
+      '/donor/alerts': (el) => renderDonorAlerts(el, { navigate: (p) => router.navigate(p) }),
+      '/donor/alert-detail': renderDonorAlertDetail,
     },
     fallback: notFoundView,
   });

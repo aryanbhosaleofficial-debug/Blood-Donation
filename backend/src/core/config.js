@@ -160,7 +160,9 @@ function buildConfig(env) {
     requestMaxUnits: integerInRange('REQUEST_MAX_UNITS', 20, 1, 100000),
     requestBackupSlotsDefault: integerInRange('REQUEST_BACKUP_SLOTS_DEFAULT', 0, 0, 100),
     locationSessionTtlMinutes: integer('LOCATION_SESSION_TTL_MINUTES', 30),
-    availabilityFreshnessDays: integer('AVAILABILITY_FRESHNESS_DAYS', 7),
+    availabilityFreshnessDays: integerInRange('AVAILABILITY_FRESHNESS_DAYS', 7, 1, 3650),
+    donorDiscoveryRadiusKm: integerInRange('DONOR_DISCOVERY_RADIUS_KM', 25, 1, 1000),
+    donorMatchLimit: integerInRange('DONOR_MATCH_LIMIT', 50, 1, 1000),
     notificationMaxAttempts: integer('NOTIFICATION_MAX_ATTEMPTS', 3),
     pollIntervalMs: integer('POLL_INTERVAL_MS', 3000),
 

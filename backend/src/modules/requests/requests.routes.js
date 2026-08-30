@@ -63,6 +63,16 @@ router.get(
 );
 
 router.post(
+  '/:requestId/donor-fallback',
+  requireRole(ROLES.HOSPITAL),
+  requireVerified,
+  validate(schemas.requestIdParamSchema, 'params'),
+  (req,res,next)=>{req.requestId=req.validated.requestId;next();},
+  validate(allocationSchemas.emptyBodySchema),
+  c.donorFallback,
+);
+
+router.post(
   '/:requestId/cancel',
   requireRole(ROLES.HOSPITAL),
   requireVerified,

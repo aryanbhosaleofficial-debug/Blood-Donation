@@ -10,6 +10,7 @@
 const { sendSuccess } = require('../../core/response');
 const { ROLES } = require('../../core/constants');
 const service = require('./requests.service');
+const matchingService = require('../matching/matching.service');
 
 function create(req, res, next) {
   try {
@@ -58,4 +59,6 @@ function complete(req, res, next) {
   }
 }
 
-module.exports = { create, list, getOne, cancel, complete };
+function donorFallback(req,res,next){try{return sendSuccess(res,matchingService.activatePotentialDonorFallback(req.user,req.requestId));}catch(e){return next(e);}}
+
+module.exports = { create, list, getOne, cancel, complete, donorFallback };

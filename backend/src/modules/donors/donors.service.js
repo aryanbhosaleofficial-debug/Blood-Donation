@@ -1,0 +1,5 @@
+'use strict';const repo=require('./donors.repository');const policy=require('./donors.policy');const ser=require('./donors.serializer');
+const normalize=d=>({...d,phone:d.phone??null,email:d.email??null,locality:d.locality??null,pinCode:d.pinCode??null,approxLatitude:d.approxLatitude??null,approxLongitude:d.approxLongitude??null,lastDonationDate:d.lastDonationDate??null,nextContactAfter:d.nextContactAfter??null});
+function create(userId,d){if(repo.findByUserId(userId))throw policy.duplicate();try{return ser.serializeDonorForSelf(repo.insert(userId,normalize(d)));}catch(e){if(e&&String(e.code||'').startsWith('SQLITE_CONSTRAINT_UNIQUE'))throw policy.duplicate();throw e;}}
+function get(userId){return ser.serializeDonorForSelf(policy.requireProfile(repo.findByUserId(userId)));}function update(userId,d){policy.requireProfile(repo.findByUserId(userId));return ser.serializeDonorForSelf(repo.update(userId,d));}function availability(userId,status){policy.requireProfile(repo.findByUserId(userId));return ser.serializeDonorForSelf(repo.setAvailability(userId,status));}
+module.exports={create,get,update,availability};
