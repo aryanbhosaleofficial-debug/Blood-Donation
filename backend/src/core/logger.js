@@ -58,6 +58,7 @@ const REDACT_KEYS = new Set([
   'approx_longitude',
   'phone',
   'phone_private',
+  'email',
   'email_private',
 ]);
 

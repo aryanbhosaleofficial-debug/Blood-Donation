@@ -58,7 +58,7 @@ test('redact() recursively masks sensitive keys and keeps safe ones', () => {
   assert.equal(out.nested.lng, '[REDACTED]');
   assert.equal(out.list[0].token, '[REDACTED]');
   assert.equal(out.safeValue, 'visible');
-  assert.equal(out.email, 'user@example.com');
+  assert.equal(out.email, '[REDACTED]');
 });
 
 test('emitted log lines contain no sensitive values', () => {
@@ -72,6 +72,7 @@ test('emitted log lines contain no sensitive values', () => {
       secret: 'my-app-secret',
       coords: { latitude: 19.07, longitude: 72.87 },
       user: { email: 'donor@example.com', role: 'DONOR' },
+      phone: '9999999999',
     });
   });
 
@@ -84,9 +85,10 @@ test('emitted log lines contain no sensitive values', () => {
     'my-app-secret',
     '19.07',
     '72.87',
+    'donor@example.com',
+    '9999999999',
   ]) {
     assert.ok(!output.includes(leak), `log output leaked "${leak}"`);
   }
-  assert.ok(output.includes('donor@example.com'));
   assert.ok(output.includes('[REDACTED]'));
 });

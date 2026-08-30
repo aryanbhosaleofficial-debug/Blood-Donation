@@ -1,0 +1,2 @@
+'use strict';require('../helpers/env');const{test}=require('node:test');const assert=require('node:assert/strict');const{estimateTravel}=require('../../src/modules/eta/eta.service');
+test('ETA uses Haversine, road factor, speed and preparation buffer',()=>{const r=estimateTravel({donorLatitude:0,donorLongitude:0,hospitalLatitude:0,hospitalLongitude:.1},{etaRoadFactor:1.3,etaAssumedSpeedKmh:25,etaPrepBufferMinutes:5});assert.ok(r.straightLineKm>11&&r.straightLineKm<11.2);assert.ok(r.etaMinutes>39&&r.etaMinutes<41);});

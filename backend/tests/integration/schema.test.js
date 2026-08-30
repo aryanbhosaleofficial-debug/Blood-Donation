@@ -123,13 +123,28 @@ test('05: donors and donor_alerts enforce ownership, state, blood group and uniq
   assert.deepEqual(alertTargets, new Set(['donors', 'requests']));
 });
 
+test('06: pledge and temporary-location tables enforce privacy-safe state and ownership', () => {
+  const db = getDb();
+  const pledgeSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='donor_pledges'").get().sql;
+  const locationSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='donor_location_sessions'").get().sql;
+  assert.match(pledgeSql, /status IN \('PLEDGED', 'ARRIVED', 'CANCELLED', 'DEFERRED', 'EXPIRED', 'CLOSED'\)/);
+  assert.match(pledgeSql, /public_reference TEXT NOT NULL UNIQUE/);
+  assert.match(pledgeSql, /UNIQUE\(request_id, donor_id\)/);
+  assert.match(locationSql, /pledge_id\s+INTEGER NOT NULL UNIQUE/);
+  assert.match(locationSql, /latitude >= -90 AND latitude <= 90/);
+  assert.match(locationSql, /longitude >= -180 AND longitude <= 180/);
+  assert.match(locationSql, /UNIQUE\(donor_id, request_id\)/);
+  assert.deepEqual(new Set(db.prepare('PRAGMA foreign_key_list(donor_pledges)').all().map((row) => row.table)), new Set(['requests','donors','donor_alerts']));
+  assert.deepEqual(new Set(db.prepare('PRAGMA foreign_key_list(donor_location_sessions)').all().map((row) => row.table)), new Set(['requests','donors','donor_pledges']));
+});
+
 test('N: schema bootstrap is idempotent (re-open the same file)', () => {
   // getDb() already ran the schema once; open a second connection to the same
   // file to prove CREATE ... IF NOT EXISTS + upsert do not error.
   const { openDatabase } = require('../../src/core/database');
   const second = openDatabase({ path: process.env.DATABASE_PATH });
   try {
-    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '5');
+    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '6');
   } finally {
     second.close();
   }

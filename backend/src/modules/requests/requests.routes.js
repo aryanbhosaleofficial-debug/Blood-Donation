@@ -22,6 +22,9 @@ const schemas = require('./requests.schemas');
 const c = require('./requests.controller');
 const allocationsController = require('../allocations/allocations.controller');
 const allocationSchemas = require('../allocations/allocations.schemas');
+const pledgeController = require('../pledges/pledges.controller');
+const pledgeSchemas = require('../pledges/pledges.schemas');
+const { pledgeReadRateLimit } = require('../../middleware/pledge-read-rate-limit');
 
 router.post(
   '/',
@@ -43,6 +46,15 @@ router.get(
   requireRole(ROLES.HOSPITAL),
   validate(allocationSchemas.requestIdParamSchema, 'params'),
   allocationsController.hospitalList,
+);
+
+router.get(
+  '/:requestId/pledges',
+  requireRole(ROLES.HOSPITAL),
+  requireVerified,
+  validate(pledgeSchemas.requestIdParamSchema, 'params'),
+  pledgeReadRateLimit,
+  pledgeController.hospitalList,
 );
 
 router.post(

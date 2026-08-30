@@ -6,6 +6,7 @@ const { ConflictError, ForbiddenError, NotFoundError } = require('../../core/err
 const repo = require('./allocations.repository');
 const policy = require('./allocations.policy');
 const donorAlertsRepo = require('../donor-alerts/donor-alerts.repository');
+const pledgesRepo = require('../pledges/pledges.repository');
 const {
   ALLOCATION_ERROR, ALLOCATION_STATUS, REQUEST_STATUS, RED_CELLS,
   remainingUnits, reservableUnits,
@@ -67,6 +68,7 @@ function createAllocationTransactions(db = getDb()) {
     if (activeAllocated >= request.units_needed) {
       repo.setRequestStatus(db, requestId, REQUEST_STATUS.COVERED);
       donorAlertsRepo.closeForRequest(db, requestId);
+      pledgesRepo.deferForRequest(db, requestId);
     }
     return { allocation, request: repo.requestById(db, requestId), inventory: repo.inventoryFor(db, bank.id, request.blood_group, RED_CELLS), activeAllocated };
   });
@@ -103,6 +105,7 @@ function createAllocationTransactions(db = getDb()) {
     repo.setRequestStatus(db, requestId, REQUEST_STATUS.CANCELLED, { close: true });
     repo.closeBroadcasts(db, requestId);
     donorAlertsRepo.closeForRequest(db, requestId);
+    pledgesRepo.closeForRequest(db, requestId);
     return repo.requestById(db, requestId);
   });
 

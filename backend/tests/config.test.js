@@ -24,6 +24,10 @@ test('builds config from a valid environment with sensible defaults', () => {
   assert.equal(cfg.availabilityFreshnessDays, 7);
   assert.equal(cfg.donorDiscoveryRadiusKm, 25);
   assert.equal(cfg.donorMatchLimit, 50);
+  assert.equal(cfg.locationSessionTtlMinutes, 30);
+  assert.equal(cfg.etaRoadFactor, 1.3);
+  assert.equal(cfg.etaAssumedSpeedKmh, 25);
+  assert.equal(cfg.etaPrepBufferMinutes, 5);
   assert.equal(cfg.surge.minimumCount, 5);
   assert.equal(typeof cfg.databasePath, 'string');
   assert.ok(cfg.databasePath.endsWith('app.db'));
@@ -40,6 +44,10 @@ test('honours overrides and coerces types', () => {
     INVENTORY_STALE_MINUTES: '45',
     DONOR_DISCOVERY_RADIUS_KM: '40',
     DONOR_MATCH_LIMIT: '25',
+    LOCATION_SESSION_TTL_MINUTES: '45',
+    ETA_ROAD_FACTOR: '1.5',
+    ETA_ASSUMED_SPEED_KMH: '30',
+    ETA_PREP_BUFFER_MINUTES: '7',
   });
   assert.equal(cfg.nodeEnv, 'production');
   assert.equal(cfg.isProduction, true);
@@ -50,6 +58,10 @@ test('honours overrides and coerces types', () => {
   assert.equal(cfg.inventoryStaleMinutes, 45);
   assert.equal(cfg.donorDiscoveryRadiusKm, 40);
   assert.equal(cfg.donorMatchLimit, 25);
+  assert.equal(cfg.locationSessionTtlMinutes, 45);
+  assert.equal(cfg.etaRoadFactor, 1.5);
+  assert.equal(cfg.etaAssumedSpeedKmh, 30);
+  assert.equal(cfg.etaPrepBufferMinutes, 7);
 });
 
 test('fails with a clear error when SESSION_SECRET is missing', () => {

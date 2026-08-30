@@ -1,10 +1,11 @@
 -- Community Blood Donation Matching System
--- Bootstrap through Module 05 (Donor Management & Potential Matching) schema.
+-- Bootstrap through Module 06 (Donor Pledges, Temporary Location & ETA) schema.
 --
 -- Module 01 adds `users`; Module 02 adds organization profiles and inventory;
 -- Module 03 adds `requests` and `request_broadcasts`.
 -- Module 04 adds atomic bank allocations; Module 05 adds donor profiles and
--- private in-app donor alerts. Later pledge/location/notification domains are absent.
+-- private in-app donor alerts. Module 06 adds donor pledges and temporary
+-- request-bound location sessions. Later notification domains are absent.
 --
 -- This file is executed on every startup and MUST be idempotent.
 
@@ -20,7 +21,7 @@ CREATE TABLE IF NOT EXISTS app_meta (
 
 -- schema_version is upserted so re-running the bootstrap keeps it current.
 INSERT INTO app_meta (key, value)
-VALUES ('schema_version', '5')
+VALUES ('schema_version', '6')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now');
 
 INSERT INTO app_meta (key, value)
@@ -243,3 +244,48 @@ CREATE TABLE IF NOT EXISTS donor_alerts (
 CREATE INDEX IF NOT EXISTS idx_donor_alerts_request ON donor_alerts(request_id);
 CREATE INDEX IF NOT EXISTS idx_donor_alerts_donor ON donor_alerts(donor_id);
 CREATE INDEX IF NOT EXISTS idx_donor_alerts_status ON donor_alerts(status);
+
+-- ---------------------------------------------------------------------------
+-- Module 06: potential-donor coordination pledges and temporary live location
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS donor_pledges (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id       INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+  donor_id         INTEGER NOT NULL REFERENCES donors(id) ON DELETE CASCADE,
+  alert_id         INTEGER NOT NULL UNIQUE REFERENCES donor_alerts(id) ON DELETE CASCADE,
+  public_reference TEXT NOT NULL UNIQUE,
+  status           TEXT NOT NULL DEFAULT 'PLEDGED'
+                   CHECK (status IN ('PLEDGED', 'ARRIVED', 'CANCELLED', 'DEFERRED', 'EXPIRED', 'CLOSED')),
+  pledged_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  arrived_at       TEXT,
+  cancelled_at     TEXT,
+  closed_at        TEXT,
+  created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  UNIQUE(request_id, donor_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_donor_pledges_request ON donor_pledges(request_id);
+CREATE INDEX IF NOT EXISTS idx_donor_pledges_donor ON donor_pledges(donor_id);
+CREATE INDEX IF NOT EXISTS idx_donor_pledges_status ON donor_pledges(status);
+
+CREATE TRIGGER IF NOT EXISTS trg_donor_pledges_updated_at AFTER UPDATE ON donor_pledges
+FOR EACH ROW BEGIN
+  UPDATE donor_pledges SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = OLD.id;
+END;
+
+CREATE TABLE IF NOT EXISTS donor_location_sessions (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  donor_id   INTEGER NOT NULL REFERENCES donors(id) ON DELETE CASCADE,
+  request_id INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+  pledge_id  INTEGER NOT NULL UNIQUE REFERENCES donor_pledges(id) ON DELETE CASCADE,
+  latitude   REAL NOT NULL CHECK (latitude >= -90 AND latitude <= 90),
+  longitude  REAL NOT NULL CHECK (longitude >= -180 AND longitude <= 180),
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  UNIQUE(donor_id, request_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_location_sessions_request ON donor_location_sessions(request_id);
+CREATE INDEX IF NOT EXISTS idx_location_sessions_expiry ON donor_location_sessions(expires_at);

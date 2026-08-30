@@ -40,6 +40,7 @@ test('hospitalView exposes the documented fields and nothing sensitive', () => {
       'hospitalId', 'isSynthetic', 'scenarioId',
       'bankUnitsAllocated', 'remainingBankUnits',
       'donorFallback',
+      'potentialDonorPledges',
     ].sort(),
   );
   assert.equal(out.isPastExpiry, false);

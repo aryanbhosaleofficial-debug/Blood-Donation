@@ -30,6 +30,8 @@ import { renderDonorProfile } from './modules/donor/profile.page.js';
 import { renderDonorAvailability } from './modules/donor/availability.page.js';
 import { renderDonorAlerts } from './modules/donor/alerts.page.js';
 import { renderDonorAlertDetail } from './modules/donor/alert-detail.page.js';
+import { renderDonorPledges } from './modules/donor/pledges.page.js';
+import { renderDonorPledgeDetail } from './modules/donor/pledge-detail.page.js';
 
 function row(label, value) {
   const el = document.createElement('div');
@@ -53,7 +55,7 @@ function renderBadge() {
 
 function renderNav(navigate) {
   const nav=document.getElementById('role-nav'); nav.replaceChildren(); const user=getUser(); if(!user)return;
-  const links=user.role==='HOSPITAL'?[['Dashboard','/hospital/dashboard'],['Profile','/hospital/profile'],['Create Request','/hospital/create-request'],['My Requests','/hospital/requests']]:user.role==='BLOOD_BANK'?[['Profile','/bank/profile'],['Inventory','/bank/inventory'],['Incoming Requests','/bank/incoming-requests'],['My Allocations','/bank/allocations']]:user.role==='ADMIN'?[['Organization Verification','/admin/organizations']]:[['Dashboard','/donor/dashboard'],['Profile','/donor/profile'],['Availability','/donor/availability'],['Alerts','/donor/alerts']];
+  const links=user.role==='HOSPITAL'?[['Dashboard','/hospital/dashboard'],['Profile','/hospital/profile'],['Create Request','/hospital/create-request'],['My Requests','/hospital/requests']]:user.role==='BLOOD_BANK'?[['Profile','/bank/profile'],['Inventory','/bank/inventory'],['Incoming Requests','/bank/incoming-requests'],['My Allocations','/bank/allocations']]:user.role==='ADMIN'?[['Organization Verification','/admin/organizations']]:[['Dashboard','/donor/dashboard'],['Profile','/donor/profile'],['Availability','/donor/availability'],['Alerts','/donor/alerts'],['My Pledges','/donor/pledges']];
   for(const [label,path] of links){const a=document.createElement('a');a.href=`#${path}`;a.textContent=label;a.addEventListener('click',e=>{e.preventDefault();navigate(path);});nav.append(a);}
 }
 
@@ -167,7 +169,9 @@ async function boot() {
       '/donor/profile': renderDonorProfile,
       '/donor/availability': renderDonorAvailability,
       '/donor/alerts': (el) => renderDonorAlerts(el, { navigate: (p) => router.navigate(p) }),
-      '/donor/alert-detail': renderDonorAlertDetail,
+      '/donor/alert-detail': (el) => renderDonorAlertDetail(el, { navigate: (p) => router.navigate(p) }),
+      '/donor/pledges': (el) => renderDonorPledges(el, { navigate: (p) => router.navigate(p) }),
+      '/donor/pledge-detail': renderDonorPledgeDetail,
     },
     fallback: notFoundView,
   });

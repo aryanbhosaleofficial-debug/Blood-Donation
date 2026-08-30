@@ -47,6 +47,11 @@ function hospitalView(row, now = Date.now()) {
       status: Number(row.donor_alert_actionable || 0) > 0 ? 'ACTIVE' : Number(row.donor_alert_total || 0) > 0 ? 'CLOSED' : 'INACTIVE',
       potentialDonorsAlerted: Number(row.donor_alert_actionable || 0),
     },
+    potentialDonorPledges: {
+      active: Number(row.active_pledge_count || 0),
+      maximum: Number(row.units_needed) + Number(row.backup_slots || 0),
+      available: Math.max(Number(row.units_needed) + Number(row.backup_slots || 0) - Number(row.active_pledge_count || 0), 0),
+    },
   };
 }
 

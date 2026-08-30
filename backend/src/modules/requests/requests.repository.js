@@ -16,7 +16,8 @@ const COLUMNS = `
   (SELECT COALESCE(SUM(a.units_reserved), 0) FROM request_allocations a
     WHERE a.request_id = requests.id AND a.status IN ('RESERVED','COMPLETED')) AS bank_units_allocated,
   (SELECT COUNT(*) FROM donor_alerts da WHERE da.request_id=requests.id) AS donor_alert_total,
-  (SELECT COUNT(*) FROM donor_alerts da WHERE da.request_id=requests.id AND da.status IN ('ACTIVE','VIEWED')) AS donor_alert_actionable
+  (SELECT COUNT(*) FROM donor_alerts da WHERE da.request_id=requests.id AND da.status IN ('ACTIVE','VIEWED')) AS donor_alert_actionable,
+  (SELECT COUNT(*) FROM donor_pledges dp WHERE dp.request_id=requests.id AND dp.status IN ('PLEDGED','ARRIVED')) AS active_pledge_count
 `;
 
 // request row joined with hospital facility context, for the bank view.

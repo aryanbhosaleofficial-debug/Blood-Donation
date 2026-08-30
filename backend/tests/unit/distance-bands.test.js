@@ -1,0 +1,2 @@
+'use strict';require('../helpers/env');const{test}=require('node:test');const assert=require('node:assert/strict');const{distanceBand}=require('../../src/modules/eta/eta.service');
+test('distance boundary values map to documented coarse bands',()=>{for(const[v,e]of[[0,'0–5 km'],[5,'0–5 km'],[5.01,'5–10 km'],[10,'5–10 km'],[20,'10–20 km'],[30,'20–30 km'],[30.01,'30+ km']])assert.equal(distanceBand(v),e);assert.equal(distanceBand(-1),null);});

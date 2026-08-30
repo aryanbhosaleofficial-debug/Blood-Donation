@@ -11,7 +11,8 @@
     "dev": "node --watch backend/src/server.js",
     "test": "node --test \"backend/tests/**/*.test.js\"",
     "health-check": "node scripts/health-check.js",
-    "race-test": "node scripts/race-test.js"
+    "race-test": "node scripts/race-test.js",
+    "pledge-race-test": "node scripts/pledge-race-test.js"
   },
   "engines": {
     "node": ">=20"

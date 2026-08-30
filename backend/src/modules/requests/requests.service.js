@@ -20,6 +20,7 @@ const policy = require('./requests.policy');
 const serializer = require('./requests.serializer');
 const { createAllocationTransactions } = require('../allocations/allocations.transaction');
 const donorAlertsRepo = require('../donor-alerts/donor-alerts.repository');
+const pledgesRepo = require('../pledges/pledges.repository');
 const {
   REQUEST_ERROR,
   REQUEST_STATUS,
@@ -137,6 +138,7 @@ function transition(sessionUser, requestId, targetStatus, allowedFrom) {
     const next = repo.close(getDb(), requestId, targetStatus);
     broadcastsService.closeForRequest(getDb(), requestId);
     donorAlertsRepo.closeForRequest(getDb(), requestId);
+    pledgesRepo.closeForRequest(getDb(), requestId);
     return next;
   });
   const updated = transaction.immediate();

@@ -1,0 +1,2 @@
+'use strict';require('../helpers/env');const{test}=require('node:test');const assert=require('node:assert/strict');const{etaBand}=require('../../src/modules/eta/eta.service');
+test('ETA boundary values map to documented coarse bands',()=>{for(const[v,e]of[[0,'0–10 min'],[10,'0–10 min'],[10.01,'10–20 min'],[20,'10–20 min'],[30,'20–30 min'],[45,'30–45 min'],[60,'45–60 min'],[60.01,'60+ min']])assert.equal(etaBand(v),e);assert.equal(etaBand(NaN),null);});

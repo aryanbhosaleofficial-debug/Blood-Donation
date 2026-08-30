@@ -93,6 +93,15 @@ function buildConfig(env) {
     return value;
   };
 
+  const floatInRange = (key, fallback, min, max) => {
+    const value = float(key, fallback);
+    if (value < min || value > max) {
+      errors.push(`Environment variable ${key} must be between ${min} and ${max} (received "${value}")`);
+      return fallback;
+    }
+    return value;
+  };
+
   const oneOf = (key, fallback, allowed) => {
     const value = string(key, fallback);
     if (!allowed.includes(value)) {
@@ -159,10 +168,13 @@ function buildConfig(env) {
     requestTtlMinutes: integer('REQUEST_TTL_MINUTES', 120),
     requestMaxUnits: integerInRange('REQUEST_MAX_UNITS', 20, 1, 100000),
     requestBackupSlotsDefault: integerInRange('REQUEST_BACKUP_SLOTS_DEFAULT', 0, 0, 100),
-    locationSessionTtlMinutes: integer('LOCATION_SESSION_TTL_MINUTES', 30),
+    locationSessionTtlMinutes: integerInRange('LOCATION_SESSION_TTL_MINUTES', 30, 1, 1440),
     availabilityFreshnessDays: integerInRange('AVAILABILITY_FRESHNESS_DAYS', 7, 1, 3650),
     donorDiscoveryRadiusKm: integerInRange('DONOR_DISCOVERY_RADIUS_KM', 25, 1, 1000),
     donorMatchLimit: integerInRange('DONOR_MATCH_LIMIT', 50, 1, 1000),
+    etaRoadFactor: floatInRange('ETA_ROAD_FACTOR', 1.3, 1, 5),
+    etaAssumedSpeedKmh: floatInRange('ETA_ASSUMED_SPEED_KMH', 25, 1, 200),
+    etaPrepBufferMinutes: floatInRange('ETA_PREP_BUFFER_MINUTES', 5, 0, 120),
     notificationMaxAttempts: integer('NOTIFICATION_MAX_ATTEMPTS', 3),
     pollIntervalMs: integer('POLL_INTERVAL_MS', 3000),
 
