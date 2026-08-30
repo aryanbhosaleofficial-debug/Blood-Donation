@@ -35,6 +35,8 @@ import { DonorPledgeDetailPage } from '../pages/donor/DonorPledgeDetailPage.jsx'
 
 // Admin Pages
 import { OrganizationVerificationPage } from '../pages/admin/OrganizationVerificationPage.jsx';
+import { OperationalMetricsPage } from '../pages/admin/OperationalMetricsPage.jsx';
+import { AuditLogsPage } from '../pages/admin/AuditLogsPage.jsx';
 
 export function AppRouter() {
   return (
@@ -245,6 +247,26 @@ export function AppRouter() {
             <ProtectedRoute>
               <RoleRoute allowedRoles={['ADMIN']}>
                 <OrganizationVerificationPage />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/metrics"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={['ADMIN']}>
+                <OperationalMetricsPage />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit-logs"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={['ADMIN']}>
+                <AuditLogsPage />
               </RoleRoute>
             </ProtectedRoute>
           }

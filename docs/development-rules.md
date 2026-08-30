@@ -639,3 +639,60 @@ Required limitations include:
 - SQLite scale;
 - donor turnout;
 - external SMS/provider constraints.
+
+---
+
+## Rule F1 — Cleanup and audit invariants (Module 8)
+
+- Cleanup jobs must be idempotent, transactional, and restart-safe. The
+  system must tolerate a job running twice, a server restart, the same
+  expired request discovered repeatedly, and a partial previous failure —
+  without restoring inventory twice, expiring a pledge twice, duplicating
+  notifications, or leaving live coordinates behind.
+- Request expiry must use concurrency-safe transaction semantics
+  (`transaction.immediate()` / `BEGIN IMMEDIATE`) and re-read state inside
+  the transaction before deciding what to release.
+- Reserved-allocation inventory may be restored **exactly once** on expiry;
+  `RELEASED` / `COMPLETED` allocations are never automatically restored.
+- Automatic inventory restoration increments `inventory.version` and writes
+  an `inventory_adjustments` row (`REQUEST_EXPIRY_RELEASE:req=<id>`,
+  `actor_user_id = NULL`). It must never push `units_available` above
+  `INVENTORY_MAX_UNITS` — that is a controlled consistency failure, not a
+  silent clamp.
+- Temporary live donor location (`donor_location_sessions`) must be
+  **physically deleted** after expiry — never soft-deleted.
+- Notification outbox rows for expiry are inserted **inside** the expiry
+  transaction; `provider.send()` is never called from a domain transaction.
+  Repeated sweeps must not create duplicate logical notifications
+  (deterministic dedupe keys).
+- Background jobs must prevent overlapping ticks (`isRunning` guard) and
+  stop scheduling on `SIGINT` / `SIGTERM`.
+- A single failed request cleanup must not crash the server or partially
+  commit; log safe context and continue the batch.
+
+## Rule F2 — Audit logging discipline (Module 8)
+
+- `audit_logs` is **append-only**. There is no API to edit or delete a row.
+- Audit metadata is explicitly constructed per event — never
+  `JSON.stringify(req.body)`, a user/donor row, the session, or the request
+  object. `audit.sanitizer` drops forbidden keys (secrets, session/CSRF
+  tokens, `authorization`, donor phone/email, exact `latitude`/`longitude`)
+  as a second line of defence.
+- Audit is distinct from the application logger: the logger is for
+  diagnostics, `audit_logs` is for accountable user/system domain actions.
+  Do not dump request logs into the audit table; do not audit every worker
+  poll tick.
+- `recordAudit({ db })` participates in the caller's transaction where one
+  exists, so the audit row commits/rolls back with the business change.
+- System/background actions use `actor_user_id = NULL`. Never invent a fake
+  `SYSTEM` user.
+
+## Rule F3 — Operational metrics discipline (Module 8)
+
+- Metrics are aggregate `COUNT`/`SUM` queries over authoritative tables —
+  no mutable counter columns that can drift.
+- Metrics must be privacy-safe: no donor identity, contact detail,
+  coordinate, or request note in any response.
+- Synthetic / demo data (`is_synthetic = 1`) stays distinguishable from
+  real operational counts — never silently merged.
+- Metrics are not medical outcomes and not surge / disaster predictions.

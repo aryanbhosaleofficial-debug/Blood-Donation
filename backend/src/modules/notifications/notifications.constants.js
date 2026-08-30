@@ -36,6 +36,8 @@ const NOTIFICATION_EVENT = Object.freeze({
   // Module 03 - Lifecycle Closure
   REQUEST_CANCELLED: 'REQUEST_CANCELLED',
   REQUEST_COMPLETED: 'REQUEST_COMPLETED',
+  // Module 08 - Automatic Expiry
+  REQUEST_EXPIRED: 'REQUEST_EXPIRED',
   // Module 05 - Donor Alerts
   DONOR_ALERT_CREATED: 'DONOR_ALERT_CREATED',
   // Module 06 - Pledges

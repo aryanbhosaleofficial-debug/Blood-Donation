@@ -188,6 +188,11 @@ The system identifies **potential donors** only. Final medical suitability remai
 11. Frontend hardening
 12. CEP mock crisis evaluation
 
+**Implemented so far:** items 1–9 (Modules 0–8). Database `schema_version` 8.
+Background workers: notification, request-expiry, location-cleanup — with
+startup sweeps. Admin APIs: `GET /api/admin/metrics`, `GET /api/admin/audit-logs`
+(both ADMIN-only, read-only). Surge detection (item 10+) is **not** implemented.
+
 ---
 
 ## Demo Strategy

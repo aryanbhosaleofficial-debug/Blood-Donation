@@ -31,6 +31,8 @@ const { getDb } = require('../../core/database');
 const repo = require('./notifications.repository');
 const inAppProvider = require('./providers/in-app.provider');
 const { ProviderError } = require('./providers/provider.interface');
+const auditService = require('../audit/audit.service');
+const { AUDIT_ACTION, AUDIT_ENTITY } = require('../audit/audit.constants');
 
 /** Map channel -> provider instance. Only IN_APP is required for the MVP. */
 const PROVIDERS = {
@@ -86,6 +88,14 @@ function processOne(notification, db, overrideProvider = null) {
 
     if (isPermanent || nextAttempt >= notification.max_attempts) {
       repo.markFailed(db, notification.id, safe);
+      // Audit only the FINAL failure — never per-tick worker noise (08.67).
+      auditService.recordAudit({
+        actorUserId: null,
+        action: AUDIT_ACTION.NOTIFICATION_FAILED,
+        entityType: AUDIT_ENTITY.NOTIFICATION,
+        entityId: notification.id,
+        metadata: { eventType: notification.event_type, channel: notification.channel, attempts: nextAttempt },
+      });
       logger.warn('notification failed permanently', {
         id: notification.id,
         eventType: notification.event_type,

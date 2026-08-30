@@ -23,6 +23,8 @@ const donorAlertsRepo = require('../donor-alerts/donor-alerts.repository');
 const pledgesRepo = require('../pledges/pledges.repository');
 const { queueNotification } = require('../notifications/notifications.outbox');
 const builders = require('../notifications/notification-builders');
+const auditService = require('../audit/audit.service');
+const { AUDIT_ACTION, AUDIT_ENTITY } = require('../audit/audit.constants');
 const {
   REQUEST_ERROR,
   REQUEST_STATUS,
@@ -124,6 +126,22 @@ function create(sessionUser, input) {
     idempotentReplay: outcome.replay,
   });
 
+  if (!outcome.replay) {
+    auditService.recordAudit({
+      actorUserId: sessionUser.id,
+      action: AUDIT_ACTION.REQUEST_CREATED,
+      entityType: AUDIT_ENTITY.REQUEST,
+      entityId: outcome.row.id,
+      metadata: {
+        bloodGroup: outcome.row.blood_group,
+        component: outcome.row.component,
+        unitsNeeded: outcome.row.units_needed,
+        urgency: outcome.row.urgency,
+        broadcastCount: outcome.broadcastCount,
+      },
+    });
+  }
+
   return {
     request: serializer.hospitalView(outcome.row),
     broadcast: { bankCount: outcome.broadcastCount },
@@ -208,12 +226,28 @@ function transition(sessionUser, requestId, targetStatus, allowedFrom) {
     hospitalId: updated.hospital_id,
     status: updated.status,
   });
+  auditService.recordAudit({
+    actorUserId: sessionUser.id,
+    action: targetStatus === REQUEST_STATUS.CANCELLED
+      ? AUDIT_ACTION.REQUEST_CANCELLED
+      : AUDIT_ACTION.REQUEST_COMPLETED,
+    entityType: AUDIT_ENTITY.REQUEST,
+    entityId: updated.id,
+    metadata: { statusTo: updated.status },
+  });
   return { request: serializer.hospitalView(updated) };
 }
 
 function cancel(sessionUser, requestId) {
   const hospital = policy.resolveHospitalProfile(sessionUser.id);
   const updated = createAllocationTransactions().cancelRequest({ hospitalId: hospital.id, actorUserId: sessionUser.id, requestId });
+  auditService.recordAudit({
+    actorUserId: sessionUser.id,
+    action: AUDIT_ACTION.REQUEST_CANCELLED,
+    entityType: AUDIT_ENTITY.REQUEST,
+    entityId: updated.id,
+    metadata: { statusTo: updated.status },
+  });
   return { request: serializer.hospitalView(updated) };
 }
 

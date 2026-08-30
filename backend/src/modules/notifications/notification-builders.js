@@ -119,6 +119,20 @@ function buildRequestCompletedNotification({ requestId, recipientUserId }) {
   };
 }
 
+// --- Module 08: Request Expiry ---
+
+function buildRequestExpiredNotification({ requestId, recipientUserId }) {
+  return {
+    eventType: NOTIFICATION_EVENT.REQUEST_EXPIRED,
+    entityType: NOTIFICATION_ENTITY.REQUEST,
+    entityId: requestId,
+    dedupeKey: `REQUEST_EXPIRED:req=${requestId}:user=${recipientUserId}`,
+    title: 'Emergency Request Expired',
+    message: `Emergency Request #${requestId} has expired and was closed automatically.`,
+    payload: { requestId },
+  };
+}
+
 // --- Module 05: Donor Alerts ---
 
 function buildDonorAlertNotification({ alertId, bloodGroup, component, urgency, hospitalName, city, locality, expiresAt }) {
@@ -205,6 +219,7 @@ module.exports = {
   buildRequestReopenedNotification,
   buildRequestCancelledNotification,
   buildRequestCompletedNotification,
+  buildRequestExpiredNotification,
   buildDonorAlertNotification,
   buildPledgeCreatedForHospitalNotification,
   buildPledgeConfirmedForDonorNotification,

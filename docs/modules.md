@@ -723,6 +723,73 @@ Responsibilities:
 - synthetic requests do not affect real metric query;
 - audit entries exist for major mutations.
 
+## Implementation status — IMPLEMENTED (schema_version 8)
+
+Backend:
+
+- `db/schema.sql` — new `audit_logs` table (append-only: `id`, `actor_user_id`
+  nullable FK, `action`, `entity_type`, `entity_id`, `metadata_json`,
+  `created_at` + indexes). `inventory_adjustments.actor_user_id` relaxed to
+  nullable (system restorations have no actor).
+- `modules/cleanup/` — `cleanup.constants`, `cleanup.repository`,
+  `request-expiry.service` (bounded batch, `expires_at ASC, id ASC`),
+  `request-expiry.transaction` (`BEGIN IMMEDIATE` via `transaction.immediate()`:
+  re-read → restore RESERVED allocations exactly once with `version += 1` +
+  `inventory_adjustments` row + allocation `RELEASED`; `PLEDGED→EXPIRED`,
+  `ARRIVED→CLOSED`; close donor alerts; **physically DELETE** location sessions;
+  close broadcasts; request `EXPIRED` + `closed_at`; queue `REQUEST_EXPIRED`
+  outbox rows with deterministic dedupe keys; write `REQUEST_EXPIRED` +
+  per-pledge `DONOR_PLEDGE_EXPIRED` audit rows), `location-cleanup.service`
+  (physical DELETE, bounded batch), `cleanup.service` (one-shot startup sweeps).
+- `jobs/request-expiry.job`, `jobs/location-cleanup.job` — reentrancy-guarded
+  (`isRunning`), self-scheduling (`setTimeout`), `start`/`stop`/`getStatus`/
+  `getLastRunAt`; wired into `server.js` start/`SIGINT`/`SIGTERM`. Startup
+  sweeps run via `cleanup.service.runStartupSweeps()` before recurring jobs.
+- `modules/audit/` — `audit.constants` (`AUDIT_ACTION`, `AUDIT_ENTITY`),
+  `audit.repository` (insert + validated `query`), `audit.sanitizer` (drops
+  forbidden keys: password/hash/token/csrf/session/cookie/authorization/
+  latitude/longitude/phone/email/lat/lng/lon/coords — key and value, recursively),
+  `audit.service.recordAudit({db?})` (transaction-participating; never throws),
+  `audit.serializer`, `audit.schemas` (Zod), `audit.routes` → `GET
+  /api/admin/audit-logs` (ADMIN, read-only, filters: action/entityType/entityId/
+  actorUserId/from/to/limit≤200/offset, `created_at DESC, id DESC`).
+- Audit integrated into: auth (login success/fail/lockout/logout),
+  organization verify/revoke (in-txn), inventory update (in-txn), request
+  create/cancel/complete/expire, allocation reserve/release/complete, donor
+  profile create/update + availability change, donor fallback + alert creation,
+  pledge create/cancel/arrive/expire, location sharing start/stop,
+  notification final failure.
+- `modules/metrics/` — `metrics.repository` (aggregate `COUNT`/`SUM` only),
+  `metrics.service` (+ in-process worker status), `metrics.serializer`,
+  `metrics.routes` → `GET /api/admin/metrics` (ADMIN, read-only): requests
+  (by state, synthetic vs non-synthetic, by urgency), allocations, recorded
+  inventory (stale/fresh vs `INVENTORY_STALE_MINUTES`), donors + availability,
+  pledges, notifications, cleanup backlog + worker status.
+- Config: `REQUEST_EXPIRY_JOB_INTERVAL_MS` (60000), `REQUEST_EXPIRY_BATCH_SIZE`
+  (50), `LOCATION_CLEANUP_INTERVAL_MS` (60000), `LOCATION_CLEANUP_BATCH_SIZE`
+  (100) — all in `core/config.js`, documented in `.env.example`.
+- Notifications: `NOTIFICATION_EVENT.REQUEST_EXPIRED` +
+  `buildRequestExpiredNotification` (outbox only; provider still runs
+  post-commit).
+
+Frontend (React + Vite):
+
+- `api/metrics.api.js`, `api/audit.api.js`.
+- `pages/admin/OperationalMetricsPage.jsx`, `pages/admin/AuditLogsPage.jsx`.
+- `components/admin/MetricsCard.jsx`, `MetricsSection.jsx`, `AuditLogTable.jsx`
+  (metadata via `JSON.stringify` in `<pre>` — no raw-HTML injection),
+  `AuditFilterForm.jsx`.
+- `AppLayout` admin nav: Organization Verification / Operational Metrics /
+  Audit Logs. Routes added under `/admin/metrics` and `/admin/audit-logs`
+  (ADMIN-gated by `RoleRoute`).
+
+Tests: 293 backend (`node --test`), 18 frontend (`vitest`), production build
+green, allocation + pledge race scripts green.
+
+Not implemented (Module 9+): surge baselines, Poisson modelling, anomaly
+detection, surge scoring/events, disaster prediction, AI/LLM, WebSockets/SSE,
+PostgreSQL.
+
 ---
 
 # Module 9 — Surge Detection

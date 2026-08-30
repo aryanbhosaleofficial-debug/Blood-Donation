@@ -11,6 +11,8 @@ const { getDb } = require('../../core/database');
 const logger = require('../../core/logger');
 const { queueNotification } = require('../notifications/notifications.outbox');
 const builders = require('../notifications/notification-builders');
+const auditService = require('../audit/audit.service');
+const { AUDIT_ACTION, AUDIT_ENTITY } = require('../audit/audit.constants');
 
 function activatePotentialDonorFallback(user, requestId, now = Date.now()) {
   const request = repo.ownedOpenRequest(requestId, user.id);
@@ -65,6 +67,22 @@ function activatePotentialDonorFallback(user, requestId, now = Date.now()) {
 
   const result = write.immediate();
   logger.info('potential donor fallback activated', { requestId, candidateCount: selected.length, newAlertCount: result.created });
+  auditService.recordAudit({
+    actorUserId: user.id,
+    action: AUDIT_ACTION.DONOR_FALLBACK_ACTIVATED,
+    entityType: AUDIT_ENTITY.REQUEST,
+    entityId: requestId,
+    metadata: { newAlertCount: result.created, actionableAlertCount: result.total },
+  });
+  if (result.created > 0) {
+    auditService.recordAudit({
+      actorUserId: user.id,
+      action: AUDIT_ACTION.DONOR_ALERT_CREATED,
+      entityType: AUDIT_ENTITY.REQUEST,
+      entityId: requestId,
+      metadata: { alertCount: result.created },
+    });
+  }
   return serializer.hospitalFallbackResult(requestId, result.created, result.total);
 }
 

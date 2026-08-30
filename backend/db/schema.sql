@@ -1,5 +1,5 @@
 -- Community Blood Donation Matching System
--- Bootstrap through Module 07 (Transactional Notification Outbox) schema.
+-- Bootstrap through Module 08 (Cleanup, Audit & Operational Metrics) schema.
 --
 -- Module 01 adds `users`; Module 02 adds organization profiles and inventory;
 -- Module 03 adds `requests` and `request_broadcasts`.
@@ -7,6 +7,8 @@
 -- private in-app donor alerts. Module 06 adds donor pledges and temporary
 -- request-bound location sessions. Module 07 adds the transactional
 -- notification outbox (notifications table + worker-driven delivery).
+-- Module 08 adds audit_logs for accountable domain event history, request
+-- expiry cleanup, location cleanup, and operational metrics.
 --
 -- This file is executed on every startup and MUST be idempotent.
 
@@ -22,7 +24,7 @@ CREATE TABLE IF NOT EXISTS app_meta (
 
 -- schema_version is upserted so re-running the bootstrap keeps it current.
 INSERT INTO app_meta (key, value)
-VALUES ('schema_version', '7')
+VALUES ('schema_version', '8')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now');
 
 INSERT INTO app_meta (key, value)
@@ -115,7 +117,7 @@ CREATE TABLE IF NOT EXISTS inventory_adjustments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   inventory_id INTEGER NOT NULL REFERENCES inventory(id) ON DELETE CASCADE,
   bank_id INTEGER NOT NULL REFERENCES blood_banks(id) ON DELETE CASCADE,
-  actor_user_id INTEGER NOT NULL REFERENCES users(id),
+  actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   previous_units INTEGER NOT NULL,
   new_units INTEGER NOT NULL,
   previous_version INTEGER NOT NULL,
@@ -338,3 +340,25 @@ CREATE TRIGGER IF NOT EXISTS trg_notifications_updated_at AFTER UPDATE ON notifi
 FOR EACH ROW BEGIN
   UPDATE notifications SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = OLD.id;
 END;
+
+-- ---------------------------------------------------------------------------
+-- Module 08: audit log — append-only domain event history
+-- ---------------------------------------------------------------------------
+-- actor_user_id is NULL for system/background actions (e.g. request expiry).
+-- entity_type and entity_id identify the domain object that was mutated.
+-- metadata_json is explicitly constructed per event and must never contain
+-- secrets, session data, or exact donor coordinates.
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  action        TEXT    NOT NULL,
+  entity_type   TEXT,
+  entity_id     INTEGER,
+  metadata_json TEXT    NOT NULL DEFAULT '{}',
+  created_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);

@@ -424,3 +424,28 @@ The following remain external/system-boundary limitations:
 6. SQLite is a prototype database, not a high-availability production platform.
 7. Surge detection is demonstrated using synthetic data unless real historical data becomes available.
 8. SMS/provider/legal infrastructure is external to the prototype.
+
+---
+
+# 11. Module 8 — Cleanup, Audit & Metrics safety statements
+
+Preserve and reinforce:
+
+- **Potential donor ≠ medically eligible donor.** Pledge metrics count
+  coordination responses, not screened donors.
+- **Bank allocation ≠ clinically ready blood.** "Units reserved" is recorded
+  coordination movement, not proof of transfused units.
+- **Pledge arrival ≠ completed donation.** `ARRIVED → CLOSED` on request
+  expiry acknowledges arrival without inferring any clinical outcome.
+- **Metrics ≠ medical outcomes** and **metrics ≠ disaster prediction.** The
+  admin dashboard shows aggregate system counts for monitoring and CEP
+  evaluation only.
+- **Exact donor location remains temporary and private.** Location sessions
+  are physically deleted at expiry, by the recurring job, and by the startup
+  sweep. Audit rows for location events store only pledge/request IDs —
+  never latitude or longitude.
+- **Audit logs never contain secrets or exact donor coordinates**, and are
+  append-only (no edit/delete path).
+- Automatically restored inventory is bounded by `INVENTORY_MAX_UNITS`; an
+  inconsistency that would breach it is surfaced as a controlled failure,
+  not silently clamped.

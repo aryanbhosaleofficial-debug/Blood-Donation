@@ -33,7 +33,11 @@ export function AppLayout() {
           { label: 'My Pledges', path: '/donor/pledges' },
         ];
       case 'ADMIN':
-        return [{ label: 'Organization Verification', path: '/admin/organizations' }];
+        return [
+          { label: 'Organization Verification', path: '/admin/organizations' },
+          { label: 'Operational Metrics', path: '/admin/metrics' },
+          { label: 'Audit Logs', path: '/admin/audit-logs' },
+        ];
       default:
         return [];
     }

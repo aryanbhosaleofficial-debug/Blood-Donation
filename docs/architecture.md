@@ -524,6 +524,75 @@ A recurring cleanup job:
 
 Cleanup also runs immediately when a request is cancelled or completed.
 
+### 14.1 Background workers (Module 8)
+
+```
+                 ┌──────────────────┐
+                 │ Express Backend  │
+                 └────────┬─────────┘
+                          |
+             ┌────────────┼────────────┐
+             |            |            |
+             v            v            v
+     Notification     Request       Location
+       Worker          Expiry        Cleanup
+                       Worker        Worker
+             |            |            |
+             └────────────┼────────────┘
+                          |
+                          v
+                       SQLite
+```
+
+Startup sequence: `database ready → server listening → notification worker →
+request-expiry startup sweep → location-cleanup startup sweep → recurring jobs
+scheduled`. Each worker is reentrancy-guarded (`isRunning`), self-schedules with
+`setTimeout`, and stops on `SIGINT` / `SIGTERM`. Intervals and batch sizes come
+from `core/config.js` (`REQUEST_EXPIRY_JOB_INTERVAL_MS`,
+`REQUEST_EXPIRY_BATCH_SIZE`, `LOCATION_CLEANUP_INTERVAL_MS`,
+`LOCATION_CLEANUP_BATCH_SIZE`).
+
+### 14.2 Request-expiry transaction
+
+`transaction.immediate()` (`BEGIN IMMEDIATE`) — a read→decide→write workflow:
+
+```
+BEGIN IMMEDIATE
+  re-read request; confirm OPEN/COVERED and expires_at <= now (else no-op)
+  for each RESERVED allocation:
+     restore exactly units_reserved   (inventory.version += 1,
+                                       inventory_adjustments row, actor NULL)
+     allocation -> RELEASED (released_at)
+  PLEDGED -> EXPIRED ; ARRIVED -> CLOSED
+  donor alerts -> CLOSED
+  DELETE donor_location_sessions for the request
+  broadcasts -> CLOSED
+  request -> EXPIRED (closed_at)
+  queue REQUEST_EXPIRED outbox rows (deterministic dedupe keys)
+  write REQUEST_EXPIRED + per-pledge DONOR_PLEDGE_EXPIRED audit rows
+COMMIT            (any failure -> ROLLBACK, no partial effect)
+```
+
+Provider delivery happens later, in the notification worker — never inside this
+transaction.
+
+### 14.3 Audit + outbox alongside domain mutations
+
+```
+Domain Mutation
+      |
+      +--> Domain State
+      +--> Notification Outbox   (same transaction)
+      +--> Audit Log             (same transaction, where one exists)
+      |
+      v
+    COMMIT
+```
+
+`audit.service.recordAudit({ db })` accepts the caller's transaction handle so
+the audit row is atomic with the business change; without `db` it uses the
+shared connection (e.g. authentication events, which are not transactional).
+
 ---
 
 ## 15. Time Architecture

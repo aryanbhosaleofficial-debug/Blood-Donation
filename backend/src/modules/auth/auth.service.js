@@ -18,6 +18,8 @@ const { UnauthorizedError, ForbiddenError } = require('../../core/errors');
 const { verifyPassword } = require('../../security/password');
 const usersService = require('../users/users.service');
 const authRepository = require('./auth.repository');
+const auditService = require('../audit/audit.service');
+const { AUDIT_ACTION, AUDIT_ENTITY } = require('../audit/audit.constants');
 const {
   INVALID_CREDENTIALS_CODE,
   INVALID_CREDENTIALS_MESSAGE,
@@ -44,22 +46,50 @@ async function authenticate({ email, password }) {
   if (!user) {
     // Keep timing comparable to the found-user path.
     await verifyPassword(password, DUMMY_HASH);
+    auditService.recordAudit({
+      actorUserId: null,
+      action: AUDIT_ACTION.AUTH_LOGIN_FAILED,
+      entityType: AUDIT_ENTITY.USER,
+      entityId: null,
+      metadata: { reason: 'UNKNOWN_EMAIL' },
+    });
     throw invalidCredentials();
   }
 
   // A locked account behaves exactly like a bad password (no lock disclosure).
   if (usersService.isLocked(user)) {
     logger.warn('login attempt on locked account', { userId: user.id });
+    auditService.recordAudit({
+      actorUserId: user.id,
+      action: AUDIT_ACTION.AUTH_LOGIN_FAILED,
+      entityType: AUDIT_ENTITY.USER,
+      entityId: user.id,
+      metadata: { reason: 'ACCOUNT_LOCKED' },
+    });
     throw invalidCredentials();
   }
 
   const passwordOk = await verifyPassword(password, user.password_hash);
   if (!passwordOk) {
     const attempts = authRepository.incrementFailedAttempts(user.id);
+    auditService.recordAudit({
+      actorUserId: user.id,
+      action: AUDIT_ACTION.AUTH_LOGIN_FAILED,
+      entityType: AUDIT_ENTITY.USER,
+      entityId: user.id,
+      metadata: { reason: 'BAD_PASSWORD', failedAttempts: attempts },
+    });
     if (attempts >= config.login.maxAttempts) {
       const lockedUntil = new Date(Date.now() + config.login.lockMinutes * 60 * 1000).toISOString();
       authRepository.setLockedUntil(user.id, lockedUntil);
       logger.warn('account locked after repeated failures', { userId: user.id, attempts });
+      auditService.recordAudit({
+        actorUserId: user.id,
+        action: AUDIT_ACTION.AUTH_ACCOUNT_LOCKED,
+        entityType: AUDIT_ENTITY.USER,
+        entityId: user.id,
+        metadata: { failedAttempts: attempts, lockMinutes: config.login.lockMinutes },
+      });
     }
     throw invalidCredentials();
   }

@@ -7,6 +7,8 @@ const pledgesRepo = require('../pledges/pledges.repository');
 const policy = require('./locations.policy');
 const repo = require('./locations.repository');
 const serializer = require('./locations.serializer');
+const auditService = require('../audit/audit.service');
+const { AUDIT_ACTION, AUDIT_ENTITY } = require('../audit/audit.constants');
 
 function update(userId, pledgeId, coordinates, now = Date.now()) {
   const transaction = getDb().transaction(() => {
@@ -23,6 +25,14 @@ function update(userId, pledgeId, coordinates, now = Date.now()) {
   });
   const location = transaction.immediate();
   logger.info('temporary donor location sharing updated', { pledgeId, locationSharing: 'active' });
+  // Audit records the event only — never latitude/longitude.
+  auditService.recordAudit({
+    actorUserId: userId,
+    action: AUDIT_ACTION.LOCATION_SHARING_STARTED,
+    entityType: AUDIT_ENTITY.LOCATION_SESSION,
+    entityId: Number(pledgeId),
+    metadata: { pledgeId: Number(pledgeId), requestId: location.request_id ?? null },
+  });
   return { location: serializer.serializeLocationForDonorSelf(location, now) };
 }
 
@@ -33,6 +43,13 @@ function stop(userId, pledgeId) {
   });
   transaction.immediate();
   logger.info('temporary donor location sharing stopped', { pledgeId, locationSharing: 'stopped' });
+  auditService.recordAudit({
+    actorUserId: userId,
+    action: AUDIT_ACTION.LOCATION_SHARING_STOPPED,
+    entityType: AUDIT_ENTITY.LOCATION_SESSION,
+    entityId: Number(pledgeId),
+    metadata: { pledgeId: Number(pledgeId) },
+  });
   return { location: serializer.serializeLocationForDonorSelf(null) };
 }
 

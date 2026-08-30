@@ -22,6 +22,9 @@ const logger = require('./core/logger');
 const { getDb, pingDatabase, closeDatabase } = require('./core/database');
 const { createApp } = require('./app');
 const notificationWorker = require('./jobs/notification-worker.job');
+const requestExpiryJob = require('./jobs/request-expiry.job');
+const locationCleanupJob = require('./jobs/location-cleanup.job');
+const cleanupService = require('./modules/cleanup/cleanup.service');
 
 function start() {
   // --- 2. Database ------------------------------------------------------
@@ -45,15 +48,22 @@ function start() {
       env: config.nodeEnv,
       origin: config.appOrigin,
     });
-    // Start notification worker after server is listening (non-blocking).
+    // Start background workers after server is listening (non-blocking).
     if (!config.isTest) {
       notificationWorker.start();
+      // One-shot startup cleanup sweeps: catch anything that expired while the
+      // process was offline, before the recurring jobs take over.
+      cleanupService.runStartupSweeps();
+      requestExpiryJob.start();
+      locationCleanupJob.start();
     }
   });
 
   const shutdown = (signal) => {
     logger.info('shutting down', { signal });
     notificationWorker.stop();
+    requestExpiryJob.stop();
+    locationCleanupJob.stop();
     server.close(() => {
       closeDatabase();
       process.exit(0);

@@ -182,6 +182,12 @@ function buildConfig(env) {
     notificationRetryBaseMs: integer('NOTIFICATION_RETRY_BASE_MS', 5000),
     pollIntervalMs: integer('POLL_INTERVAL_MS', 3000),
 
+    // Module 08 — Cleanup job configuration
+    requestExpiryJobIntervalMs: integer('REQUEST_EXPIRY_JOB_INTERVAL_MS', 60000),
+    requestExpiryBatchSize: integerInRange('REQUEST_EXPIRY_BATCH_SIZE', 50, 1, 500),
+    locationCleanupIntervalMs: integer('LOCATION_CLEANUP_INTERVAL_MS', 60000),
+    locationCleanupBatchSize: integerInRange('LOCATION_CLEANUP_BATCH_SIZE', 100, 1, 1000),
+
     surge: {
       probabilityThreshold: float('SURGE_PROBABILITY_THRESHOLD', 0.01),
       minimumCount: integer('SURGE_MINIMUM_COUNT', 5),

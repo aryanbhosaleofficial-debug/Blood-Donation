@@ -8,11 +8,11 @@ function upsert(db, { donorId, requestId, pledgeId, latitude, longitude, expires
       latitude=excluded.latitude,longitude=excluded.longitude,expires_at=excluded.expires_at,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')`)
     .run(donorId, requestId, pledgeId, latitude, longitude, expiresAt);
-  return db.prepare('SELECT id,pledge_id,expires_at,created_at,updated_at FROM donor_location_sessions WHERE pledge_id=?').get(pledgeId);
+  return db.prepare('SELECT id,pledge_id,request_id,donor_id,expires_at,created_at,updated_at FROM donor_location_sessions WHERE pledge_id=?').get(pledgeId);
 }
 
 function findForPledge(db, pledgeId) {
-  return db.prepare('SELECT id,pledge_id,expires_at,created_at,updated_at FROM donor_location_sessions WHERE pledge_id=?').get(pledgeId);
+  return db.prepare('SELECT id,pledge_id,request_id,donor_id,expires_at,created_at,updated_at FROM donor_location_sessions WHERE pledge_id=?').get(pledgeId);
 }
 
 function deleteForPledge(db, pledgeId) {

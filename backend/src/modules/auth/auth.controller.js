@@ -11,6 +11,8 @@ const { SESSION_COOKIE_NAME } = require('../../core/constants');
 const csrf = require('../../security/csrf');
 const usersService = require('../users/users.service');
 const authService = require('./auth.service');
+const auditService = require('../audit/audit.service');
+const { AUDIT_ACTION, AUDIT_ENTITY } = require('../audit/audit.constants');
 
 function regenerateSession(req) {
   return new Promise((resolve, reject) => {
@@ -36,6 +38,14 @@ async function login(req, res, next) {
     csrf.rotateToken(req);
     await saveSession(req);
 
+    auditService.recordAudit({
+      actorUserId: userRow.id,
+      action: AUDIT_ACTION.AUTH_LOGIN_SUCCEEDED,
+      entityType: AUDIT_ENTITY.USER,
+      entityId: userRow.id,
+      metadata: { role: userRow.role },
+    });
+
     return sendSuccess(res, { user: usersService.toPublicUser(userRow) });
   } catch (err) {
     return next(err);
@@ -44,6 +54,16 @@ async function login(req, res, next) {
 
 /** POST /api/auth/logout  (requires auth + CSRF) */
 function logout(req, res, next) {
+  const userId = req.session && req.session.user ? req.session.user.id : null;
+  if (userId) {
+    auditService.recordAudit({
+      actorUserId: userId,
+      action: AUDIT_ACTION.AUTH_LOGOUT,
+      entityType: AUDIT_ENTITY.USER,
+      entityId: userId,
+      metadata: {},
+    });
+  }
   req.session.destroy((err) => {
     res.clearCookie(SESSION_COOKIE_NAME, { path: '/', httpOnly: true, sameSite: 'lax' });
     if (err) {

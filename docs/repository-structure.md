@@ -169,17 +169,30 @@ community-blood-donation-system/
 │   │   │   │       ├── email.provider.js
 │   │   │   │       └── telegram.provider.js
 │   │   │   │
-│   │   │   ├── audit/
+│   │   │   ├── cleanup/                     # Module 8
+│   │   │   │   ├── cleanup.constants.js
+│   │   │   │   ├── cleanup.repository.js
+│   │   │   │   ├── cleanup.service.js       # one-shot startup sweeps
+│   │   │   │   ├── request-expiry.service.js
+│   │   │   │   ├── request-expiry.transaction.js
+│   │   │   │   └── location-cleanup.service.js
+│   │   │   │
+│   │   │   ├── audit/                        # Module 8
 │   │   │   │   ├── audit.routes.js
 │   │   │   │   ├── audit.controller.js
 │   │   │   │   ├── audit.service.js
-│   │   │   │   └── audit.repository.js
+│   │   │   │   ├── audit.repository.js
+│   │   │   │   ├── audit.schemas.js
+│   │   │   │   ├── audit.serializer.js
+│   │   │   │   ├── audit.sanitizer.js       # drops forbidden metadata keys
+│   │   │   │   └── audit.constants.js
 │   │   │   │
-│   │   │   ├── metrics/
+│   │   │   ├── metrics/                      # Module 8
 │   │   │   │   ├── metrics.routes.js
 │   │   │   │   ├── metrics.controller.js
 │   │   │   │   ├── metrics.service.js
-│   │   │   │   └── metrics.repository.js
+│   │   │   │   ├── metrics.repository.js
+│   │   │   │   └── metrics.serializer.js
 │   │   │   │
 │   │   │   ├── surge/
 │   │   │   │   ├── surge.routes.js
@@ -263,7 +276,9 @@ community-blood-donation-system/
 │   │   │   ├── allocations.api.js
 │   │   │   ├── donor.api.js
 │   │   │   ├── pledges.api.js
-│   │   │   └── admin.api.js
+│   │   │   ├── admin.api.js
+│   │   │   ├── metrics.api.js               # Module 8
+│   │   │   └── audit.api.js                 # Module 8
 │   │   │
 │   │   ├── context/
 │   │   │   ├── AuthContext.jsx
@@ -313,7 +328,9 @@ community-blood-donation-system/
 │   │   │   │   ├── DonorPledgesPage.jsx
 │   │   │   │   └── DonorPledgeDetailPage.jsx
 │   │   │   └── admin/
-│   │   │       └── OrganizationVerificationPage.jsx
+│   │   │       ├── OrganizationVerificationPage.jsx
+│   │   │       ├── OperationalMetricsPage.jsx   # Module 8
+│   │   │       └── AuditLogsPage.jsx            # Module 8
 │   │   │
 │   │   ├── components/
 │   │   │   ├── common/
@@ -331,12 +348,17 @@ community-blood-donation-system/
 │   │   │   ├── blood-bank/
 │   │   │   │   ├── IncomingRequestCard.jsx
 │   │   │   │   └── BankAllocationList.jsx
-│   │   │   └── donor/
-│   │   │       ├── DonorProfileForm.jsx
-│   │   │       ├── AvailabilityControl.jsx
-│   │   │       ├── AlertCard.jsx
-│   │   │       ├── PledgeControl.jsx
-│   │   │       └── LocationSharingControl.jsx
+│   │   │   ├── donor/
+│   │   │   │   ├── DonorProfileForm.jsx
+│   │   │   │   ├── AvailabilityControl.jsx
+│   │   │   │   ├── AlertCard.jsx
+│   │   │   │   ├── PledgeControl.jsx
+│   │   │   │   └── LocationSharingControl.jsx
+│   │   │   └── admin/                        # Module 8
+│   │   │       ├── MetricsCard.jsx
+│   │   │       ├── MetricsSection.jsx
+│   │   │       ├── AuditLogTable.jsx
+│   │   │       └── AuditFilterForm.jsx
 │   │   │
 │   │   ├── utils/
 │   │   │   ├── dates.js
@@ -352,6 +374,7 @@ community-blood-donation-system/
 │   │   ├── hospital.test.jsx
 │   │   ├── blood-bank.test.jsx
 │   │   ├── donor.test.jsx
+│   │   ├── admin.test.jsx                    # Module 8 (metrics + audit pages)
 │   │   └── security.test.jsx
 │   │
 │   ├── index.html

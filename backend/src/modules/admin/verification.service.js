@@ -1,2 +1,42 @@
-'use strict';const {getDb}=require('../../core/database');const {NotFoundError,ConflictError}=require('../../core/errors');const {ROLES}=require('../../core/constants');const repo=require('./verification.repository');const ser=require('./verification.serializer');
-function list(verified){return repo.listByVerified(verified).map(ser.serialize);}function change(targetId,adminId,verified){return getDb().transaction(()=>{const u=repo.findUser(getDb(),targetId);if(!u||![ROLES.HOSPITAL,ROLES.BLOOD_BANK].includes(u.role))throw new NotFoundError('Organization user not found.',{code:'ORGANIZATION_NOT_FOUND'});if(!repo.findProfile(getDb(),u))throw new ConflictError('A matching organization profile is required.',{code:'ORGANIZATION_PROFILE_REQUIRED'});repo.setVerified(getDb(),u,adminId,verified);return ser.serialize(repo.joinedByUserId(getDb(),targetId));})();}module.exports={pending:()=>list(false),verified:()=>list(true),verify:(id,a)=>change(id,a,true),revoke:(id,a)=>change(id,a,false)};
+'use strict';
+
+const { getDb } = require('../../core/database');
+const { NotFoundError, ConflictError } = require('../../core/errors');
+const { ROLES } = require('../../core/constants');
+const repo = require('./verification.repository');
+const ser = require('./verification.serializer');
+const auditRepo = require('../audit/audit.repository');
+const { AUDIT_ACTION, AUDIT_ENTITY } = require('../audit/audit.constants');
+
+function list(verified) {
+  return repo.listByVerified(verified).map(ser.serialize);
+}
+
+function change(targetId, adminId, verified) {
+  return getDb().transaction(() => {
+    const u = repo.findUser(getDb(), targetId);
+    if (!u || ![ROLES.HOSPITAL, ROLES.BLOOD_BANK].includes(u.role)) {
+      throw new NotFoundError('Organization user not found.', { code: 'ORGANIZATION_NOT_FOUND' });
+    }
+    if (!repo.findProfile(getDb(), u)) {
+      throw new ConflictError('A matching organization profile is required.', { code: 'ORGANIZATION_PROFILE_REQUIRED' });
+    }
+    repo.setVerified(getDb(), u, adminId, verified);
+    // Audit inside the same transaction so the record aligns with committed state.
+    auditRepo.insert(getDb(), {
+      actorUserId: adminId,
+      action: verified ? AUDIT_ACTION.ORGANIZATION_VERIFIED : AUDIT_ACTION.ORGANIZATION_VERIFICATION_REVOKED,
+      entityType: u.role === ROLES.HOSPITAL ? AUDIT_ENTITY.HOSPITAL : AUDIT_ENTITY.BLOOD_BANK,
+      entityId: targetId,
+      metadata: { targetUserId: targetId, role: u.role },
+    });
+    return ser.serialize(repo.joinedByUserId(getDb(), targetId));
+  })();
+}
+
+module.exports = {
+  pending: () => list(false),
+  verified: () => list(true),
+  verify: (id, a) => change(id, a, true),
+  revoke: (id, a) => change(id, a, false),
+};
