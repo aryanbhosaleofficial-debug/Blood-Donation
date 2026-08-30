@@ -61,31 +61,29 @@ Responsibilities:
 - database connectivity check;
 - demo startup verification.
 
-## Frontend Modules
+## Frontend Modules (React + Vite)
 
-### `core/api-client`
-
+### `api/api-client.js` & `api/csrf-token.js`
 Responsibilities:
+- Fetch wrapper with `credentials: 'include'`;
+- JSON parsing and ApiError normalization;
+- Memory-only CSRF token injection on state-changing requests;
+- Global 401 handling.
 
-- Fetch wrapper;
-- JSON parsing;
-- CSRF header injection;
-- consistent error handling.
-
-### `core/router`
-
+### `router/AppRouter.jsx` & `router/ProtectedRoute.jsx` & `router/RoleRoute.jsx`
 Responsibilities:
+- `BrowserRouter` SPA navigation;
+- Authentication & role-aware route protection (`HOSPITAL`, `BLOOD_BANK`, `DONOR`, `ADMIN`).
 
-- lightweight page/navigation behavior;
-- role-aware navigation.
-
-### `core/session`
-
+### `context/AuthContext.jsx` & `context/CsrfContext.jsx`
 Responsibilities:
+- `GET /api/auth/me` session bootstrap;
+- In-memory CSRF token synchronization;
+- Safe login/logout lifecycle.
 
-- fetch current user;
-- hold non-sensitive session UI state;
-- redirect unauthenticated users.
+### `styles/index.css`
+Responsibilities:
+- Design tokens, responsive layout grid, status badges, forms, and cards.
 
 ## Deliverables
 
@@ -166,16 +164,14 @@ Responsibilities:
 - account status;
 - organization/user verification state.
 
-## Frontend Modules
+## Frontend Modules (React + Vite)
 
-### `auth`
-
-Pages/components:
-
-- login form;
-- logout action;
-- session-expired screen;
-- generic login error.
+### `pages/auth/LoginPage.jsx` & `layouts/AuthLayout.jsx`
+Responsibilities:
+- Login form with accessible inputs;
+- Generic error banner on credential failure;
+- In-memory CSRF initialization post-authentication;
+- Redirection to role-specific dashboard upon successful login.
 
 ## Deliverables
 
@@ -249,23 +245,24 @@ Responsibilities:
 - verify/reject accounts;
 - audit verification changes.
 
-## Frontend Modules
+## Frontend Modules (React + Vite)
 
-### `bank/inventory`
-
+### `pages/blood-bank/InventoryPage.jsx` & `pages/blood-bank/BloodBankProfilePage.jsx`
 Responsibilities:
+- 8 red-cell inventory rows table;
+- Inline unit adjustment with `INVENTORY_VERSION_CONFLICT` handling and automatic reload;
+- Fresh/stale inventory indicator;
+- Blood bank organization profile and verification state display.
 
-- inventory table;
-- update form;
-- stale-stock indicator;
-- validation/error feedback.
-
-### `admin/verification`
-
+### `pages/hospital/HospitalProfilePage.jsx`
 Responsibilities:
+- Hospital organization profile view/edit;
+- Verification status display.
 
-- pending user/organization list;
-- verify/reject controls.
+### `pages/admin/OrganizationVerificationPage.jsx`
+Responsibilities:
+- Pending/verified organization list;
+- Verify and revoke action controls with CSRF-protected mutation.
 
 ## Deliverables
 
@@ -333,23 +330,18 @@ Responsibilities:
 - bank-specific incoming-request list;
 - track `sent_at`/`responded_at`.
 
-## Frontend Modules
+## Frontend Modules (React + Vite)
 
-### `hospital/requests`
+### `pages/hospital/CreateRequestPage.jsx` & `pages/hospital/RequestDetailPage.jsx` & `pages/hospital/RequestListPage.jsx`
+Responsibilities:
+- Emergency request creation form with idempotent `clientRequestId` generation and retry preservation;
+- Live request details with multi-bank allocation status, donor fallback state, and coarse ETA bands;
+- Hospital request history list and cancel/complete actions.
 
-Pages:
-
-- request form;
-- open request list;
-- request detail;
-- cancel/complete controls.
-
-### `bank/incoming-requests`
-
-Pages:
-
-- poll incoming broadcasts;
-- open request detail.
+### `pages/blood-bank/IncomingRequestsPage.jsx` & `pages/blood-bank/BloodBankRequestDetailPage.jsx`
+Responsibilities:
+- Incoming broadcast requests list for verified blood banks;
+- Request detail view with matching inventory verification and stock reservation action.
 
 ## Deliverables
 
@@ -406,23 +398,17 @@ Responsibilities:
 - calculate donor pledges where relevant;
 - derive request coverage status.
 
-## Frontend Modules
+## Frontend Modules (React + Vite)
 
-### `bank/allocations`
-
+### `pages/blood-bank/AllocationHistoryPage.jsx` & `components/blood-bank/BankAllocationList.jsx`
 Responsibilities:
+- Active and past bank allocations list;
+- Unit reservation, release, and completion controls;
+- Clear status feedback on stock release and restoration.
 
-- reserve available units;
-- show allocated quantity;
-- release allocation;
-- completion action.
-
-### `hospital/request-status`
-
+### `components/hospital/HospitalAllocationList.jsx`
 Responsibilities:
-
-- display bank allocations;
-- display remaining coordination requirement.
+- Real-time display of allocated blood banks, units reserved, and remaining coordination requirement.
 
 ## Deliverables
 
@@ -486,31 +472,27 @@ Responsibilities:
 - determine which potential donors should receive an alert;
 - avoid exposing donor list to hospital.
 
-## Frontend Modules
+## Frontend Modules (React + Vite)
 
-### `donor/profile`
-
+### `pages/donor/DonorProfilePage.jsx` & `components/donor/DonorProfileForm.jsx`
 Responsibilities:
+- Donor profile management form (blood group, locality, contact preferences);
+- Privacy boundary: contact information remains strictly internal/donor-facing.
 
-- profile form;
-- blood group;
-- locality;
-- contact settings.
-
-### `donor/availability`
-
+### `pages/donor/DonorAvailabilityPage.jsx` & `components/donor/AvailabilityControl.jsx`
 Responsibilities:
+- Available/unavailable toggle button;
+- Freshness timestamp display with relative time formatting.
 
-- available/unavailable toggle;
-- freshness timestamp display.
-
-### `donor/alerts`
-
+### `pages/donor/DonorAlertsPage.jsx` & `pages/donor/DonorAlertDetailPage.jsx` & `components/donor/AlertCard.jsx`
 Responsibilities:
+- Emergency alerts list targeted to compatible blood groups;
+- Prominent clinical disclaimer ("Potential donor discovery only — does not guarantee medical eligibility");
+- Mark as viewed lifecycle and pledge action trigger.
 
-- alert list;
-- pledge/decline action;
-- explicit "potential donor" wording.
+### `components/hospital/DonorFallbackStatus.jsx`
+Responsibilities:
+- Displays coarse potential-donor alert count and fallback status to hospital without exposing donor identities.
 
 ## Deliverables
 
@@ -574,25 +556,25 @@ Responsibilities:
 - compute distance band;
 - never return raw coordinates.
 
-## Frontend Modules
+## Frontend Modules (React + Vite)
 
-### `donor/location-sharing`
-
+### `pages/donor/DonorPledgesPage.jsx` & `pages/donor/DonorPledgeDetailPage.jsx`
 Responsibilities:
+- Donor pledge overview, cancel action, and mark arrived control;
+- Clear status feedback on pledge lifecycle.
 
-- explicit opt-in;
-- visible sharing indicator;
-- one-click stop;
-- fallback to locality/PIN when geolocation is unavailable.
-
-### `hospital/donor-status`
-
+### `components/donor/LocationSharingControl.jsx`
 Responsibilities:
+- Explicit opt-in location sharing ("Start Location Sharing" button);
+- Geolocation watch tracking with `useRef` and `clearWatch` on unmount or stop;
+- One-click stop location sharing;
+- Error handling and fallback to locality/PIN when browser geolocation is denied/unavailable.
 
-- show pledge reference;
-- ETA band;
-- distance band;
-- status only.
+### `components/hospital/DonorPledgeList.jsx`
+Responsibilities:
+- Displays pseudonymous donor references (`PDG-xxxx`);
+- Displays coarse ETA bands (`15-30m`) and distance bands (`0-5km`);
+- Zero access to donor private fields or live coordinates.
 
 ## Deliverables
 

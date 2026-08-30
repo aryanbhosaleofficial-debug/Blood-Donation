@@ -546,44 +546,45 @@ A detector tested on seeded data is demonstrated, not clinically validated.
 
 ---
 
-# I. Frontend Rules
+# I. Frontend Rules (React + Vite)
 
 ## Rule F1 — Role-specific UI
-
 A user sees only controls relevant to the authenticated role.
-
-Backend authorization remains mandatory even if UI hides controls.
+Frontend role checks are for UX only — backend authorization remains mandatory on every endpoint.
 
 ---
 
 ## Rule F2 — Loading and failure states
-
 Every asynchronous action must show:
-
-- loading;
-- success;
-- useful error;
+- `loading`;
+- `success`;
+- `useful error` (using normalized `ApiError` and domain error messages);
+- `empty` states where collections have 0 items;
 - retry/recovery where appropriate.
 
 ---
 
-## Rule F3 — Geolocation fallback
-
+## Rule F3 — Geolocation fallback & explicit start
 Phone geolocation must not be the only method.
-
-Provide:
-
-- locality;
-- PIN code;
-- approximate area fallback.
+- Location sharing must be triggered only by explicit donor action ("Start Location Sharing").
+- Store geolocation watch ID using a `useRef` and cleanly clear it with `navigator.geolocation.clearWatch()` upon stopping or unmounting.
+- Provide locality and PIN code fallback if geolocation is unavailable.
 
 ---
 
 ## Rule F4 — No precise countdown pressure
-
-ETA should be a band.
-
+ETA should be a coarse band (e.g. `< 15 min`, `15-30 min`, `30-60 min`).
 Avoid a constantly decreasing countdown that may encourage unsafe travel.
+
+---
+
+## Rule F5 — Functional components and hooks discipline
+- Use React functional components and adhere to standard React Hooks rules.
+- Centralize all API communication through dedicated API modules rather than scattering raw `fetch` calls.
+- In-memory CSRF storage only: never persist CSRF tokens or authentication authority in `localStorage`, `sessionStorage`, or `IndexedDB`.
+- Zero tolerance for XSS: never use `dangerouslySetInnerHTML` or `innerHTML` for API or user-controlled content.
+- Polling intervals must be cleanly cleared on component unmount to prevent memory leaks and zombie network calls.
+- Do not duplicate backend allocation math or pledge slot logic as authoritative frontend rules — backend response is always authoritative.
 
 ---
 

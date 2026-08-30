@@ -1,1 +1,0 @@
-import{apiClient}from'../../core/api-client.js';export const adminService={pending:()=>apiClient.get('/admin/organizations/pending'),verified:()=>apiClient.get('/admin/organizations/verified'),verify:id=>apiClient.post(`/admin/organizations/${id}/verify`,{}),revoke:id=>apiClient.post(`/admin/organizations/${id}/revoke`,{})};

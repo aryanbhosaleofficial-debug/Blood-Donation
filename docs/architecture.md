@@ -33,12 +33,17 @@ The architecture must:
 ## 3. High-Level System Context
 
 ```text
-+-------------------+
-| Verified Hospital |
-+---------+---------+
-          |
-          | Emergency request
-          v
++------------------------------------------------------+
+|                 React + Vite Frontend                |
+|  - React 18 SPA, React Router v6                     |
+|  - AuthContext & CsrfContext (In-Memory CSRF)        |
+|  - Role-specific UI Portals & Protected/Role Routes  |
++---------------------------+--------------------------+
+                            |
+                            | REST API (JSON)
+                            | Session Cookie (HttpOnly)
+                            | X-CSRF-Token (State-changing)
+                            v
 +------------------------------------------------------+
 |                  Express Application                 |
 |                                                      |
@@ -73,56 +78,52 @@ The architecture must:
 
 ---
 
-## 4. Client Architecture
+## 4. Client Architecture (React + Vite)
 
-The frontend is divided into role-based portals.
+The frontend is a single-page application built with **React 18** and bundled with **Vite**, using **React Router (v6)** for client-side routing. It interacts with the Express backend exclusively via REST APIs through the centralized `apiClient`.
+
+### Key Frontend Principles:
+- **Centralized API Client**: All HTTP requests flow through `frontend/src/api/api-client.js` with `credentials: 'include'`.
+- **Memory-Only CSRF**: CSRF tokens are stored strictly in JavaScript runtime memory (`frontend/src/api/csrf-token.js`) and never written to `localStorage`, `sessionStorage`, or `IndexedDB`.
+- **Auth Bootstrap**: The client bootstraps via `GET /api/auth/me` to determine session state, fetching `GET /api/auth/csrf-token` only after confirming an active authenticated session.
+- **Route Protection**: `ProtectedRoute` and `RoleRoute` enforce authenticated role layouts for UX navigation while backend authorization remains mandatory and authoritative.
+
+The frontend is organized into role-based portals:
 
 ### Hospital Portal
-
 Responsibilities:
-
 - authentication;
-- emergency request creation;
-- request status monitoring;
-- viewing bank allocations;
-- viewing pseudonymous donor pledge status;
+- emergency request creation with idempotent `clientRequestId`;
+- request status monitoring and lifecycle management (cancel/complete);
+- viewing multi-bank allocations;
+- viewing pseudonymous donor pledge status (`PDG-xxxx`) with coarse ETA and distance bands;
 - request cancellation/completion;
-- no access to donor phone numbers or coordinates.
+- strict privacy boundary: no access to donor names, phone numbers, emails, or precise coordinates.
 
 ### Blood Bank Portal
-
 Responsibilities:
-
 - authentication;
-- inventory management;
-- viewing only requests broadcast to that bank;
-- reserving available units;
-- releasing a reservation when required;
-- completing an allocation;
+- 8 red-cell inventory row management with version-conflict detection and auto-reload;
+- viewing broadcast emergency requests;
+- reserving available inventory units;
+- releasing reservations when needed;
+- completing allocations;
 - acknowledging stale inventory warnings.
 
 ### Donor Portal
-
 Responsibilities:
-
-- registration and verification;
-- blood group and availability management;
-- last-donation/contact-window information;
-- viewing relevant emergency alerts;
-- pledge/decline;
-- optional temporary location sharing after a pledge;
-- stopping location sharing at any time.
+- registration and login;
+- blood group and availability status management;
+- viewing emergency alerts targeted to compatible donors;
+- atomic pledge creation;
+- optional temporary location sharing triggered only by explicit user action;
+- stopping location sharing with automatic geolocation watch cleanup (`clearWatch`).
 
 ### Admin Portal
-
 Responsibilities:
-
-- verify hospitals, blood banks, and optional donor accounts;
-- inspect open requests;
-- review audit logs;
-- review notification failures;
-- confirm/reject high-level surge escalations;
-- view system metrics.
+- verify hospital and blood-bank registrations;
+- inspect pending and verified organizations;
+- review system audit logs and metrics.
 
 ---
 

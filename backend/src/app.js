@@ -137,7 +137,7 @@ function createApp({ mountExtra } = {}) {
   app.use(`${API_PREFIX}`, notFound);
 
   // --- Static frontend ----------------------------------------------
-  app.use(express.static(path.join(FRONTEND_DIR, 'public')));
+  app.use(express.static(FRONTEND_DIR));
   app.use('/src', express.static(path.join(FRONTEND_DIR, 'src')));
 
   // Everything else -> JSON 404.

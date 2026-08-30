@@ -247,109 +247,116 @@ community-blood-donation-system/
 │
 ├── frontend/
 │   ├── public/
-│   │   ├── index.html
-│   │   ├── favicon.ico
-│   │   └── assets/
-│   │       ├── icons/
-│   │       └── images/
+│   │   └── favicon.ico
 │   │
 │   ├── src/
-│   │   ├── main.js
+│   │   ├── main.jsx
+│   │   ├── App.jsx
 │   │   │
-│   │   ├── core/
+│   │   ├── api/
 │   │   │   ├── api-client.js
-│   │   │   ├── csrf.js
-│   │   │   ├── session.js
-│   │   │   ├── router.js
-│   │   │   ├── polling.js
-│   │   │   └── config.js
+│   │   │   ├── csrf-token.js
+│   │   │   ├── auth.api.js
+│   │   │   ├── hospital.api.js
+│   │   │   ├── blood-bank.api.js
+│   │   │   ├── requests.api.js
+│   │   │   ├── allocations.api.js
+│   │   │   ├── donor.api.js
+│   │   │   ├── pledges.api.js
+│   │   │   └── admin.api.js
+│   │   │
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx
+│   │   │   └── CsrfContext.jsx
+│   │   │
+│   │   ├── hooks/
+│   │   │   ├── useAuth.js
+│   │   │   ├── useCsrf.js
+│   │   │   └── usePolling.js
+│   │   │
+│   │   ├── router/
+│   │   │   ├── AppRouter.jsx
+│   │   │   ├── ProtectedRoute.jsx
+│   │   │   └── RoleRoute.jsx
+│   │   │
+│   │   ├── layouts/
+│   │   │   ├── AppLayout.jsx
+│   │   │   ├── AuthLayout.jsx
+│   │   │   ├── HospitalLayout.jsx
+│   │   │   ├── BloodBankLayout.jsx
+│   │   │   ├── DonorLayout.jsx
+│   │   │   └── AdminLayout.jsx
+│   │   │
+│   │   ├── pages/
+│   │   │   ├── HomePage.jsx
+│   │   │   ├── NotFoundPage.jsx
+│   │   │   ├── auth/
+│   │   │   │   └── LoginPage.jsx
+│   │   │   ├── hospital/
+│   │   │   │   ├── HospitalDashboardPage.jsx
+│   │   │   │   ├── HospitalProfilePage.jsx
+│   │   │   │   ├── CreateRequestPage.jsx
+│   │   │   │   ├── RequestListPage.jsx
+│   │   │   │   └── RequestDetailPage.jsx
+│   │   │   ├── blood-bank/
+│   │   │   │   ├── BloodBankProfilePage.jsx
+│   │   │   │   ├── InventoryPage.jsx
+│   │   │   │   ├── IncomingRequestsPage.jsx
+│   │   │   │   ├── BloodBankRequestDetailPage.jsx
+│   │   │   │   └── AllocationHistoryPage.jsx
+│   │   │   ├── donor/
+│   │   │   │   ├── DonorDashboardPage.jsx
+│   │   │   │   ├── DonorProfilePage.jsx
+│   │   │   │   ├── DonorAvailabilityPage.jsx
+│   │   │   │   ├── DonorAlertsPage.jsx
+│   │   │   │   ├── DonorAlertDetailPage.jsx
+│   │   │   │   ├── DonorPledgesPage.jsx
+│   │   │   │   └── DonorPledgeDetailPage.jsx
+│   │   │   └── admin/
+│   │   │       └── OrganizationVerificationPage.jsx
 │   │   │
 │   │   ├── components/
-│   │   │   ├── app-header.js
-│   │   │   ├── nav.js
-│   │   │   ├── loading.js
-│   │   │   ├── error-banner.js
-│   │   │   ├── status-badge.js
-│   │   │   ├── modal.js
-│   │   │   └── confirm-dialog.js
-│   │   │
-│   │   ├── modules/
-│   │   │   │
-│   │   │   ├── auth/
-│   │   │   │   ├── login.page.js
-│   │   │   │   ├── login.form.js
-│   │   │   │   └── auth.service.js
-│   │   │   │
+│   │   │   ├── common/
+│   │   │   │   ├── Header.jsx
+│   │   │   │   ├── Footer.jsx
+│   │   │   │   ├── StatusBadge.jsx
+│   │   │   │   ├── LoadingSpinner.jsx
+│   │   │   │   └── ErrorAlert.jsx
 │   │   │   ├── hospital/
-│   │   │   │   ├── dashboard.page.js
-│   │   │   │   ├── create-request.page.js
-│   │   │   │   ├── request-detail.page.js
-│   │   │   │   ├── request-history.page.js
-│   │   │   │   ├── hospital.service.js
-│   │   │   │   └── components/
-│   │   │   │       ├── request-form.js
-│   │   │   │       ├── allocation-list.js
-│   │   │   │       └── donor-status-list.js
-│   │   │   │
-│   │   │   ├── bank/
-│   │   │   │   ├── dashboard.page.js
-│   │   │   │   ├── incoming-requests.page.js
-│   │   │   │   ├── request-detail.page.js
-│   │   │   │   ├── inventory.page.js
-│   │   │   │   ├── allocation-history.page.js
-│   │   │   │   ├── bank.service.js
-│   │   │   │   └── components/
-│   │   │   │       ├── inventory-table.js
-│   │   │   │       ├── request-card.js
-│   │   │   │       └── allocation-form.js
-│   │   │   │
-│   │   │   ├── donor/
-│   │   │   │   ├── dashboard.page.js
-│   │   │   │   ├── profile.page.js
-│   │   │   │   ├── availability.page.js
-│   │   │   │   ├── alerts.page.js
-│   │   │   │   ├── pledge-detail.page.js
-│   │   │   │   ├── donor.service.js
-│   │   │   │   └── components/
-│   │   │   │       ├── availability-control.js
-│   │   │   │       ├── alert-card.js
-│   │   │   │       └── location-sharing.js
-│   │   │   │
-│   │   │   └── admin/
-│   │   │       ├── dashboard.page.js
-│   │   │       ├── verification.page.js
-│   │   │       ├── audit.page.js
-│   │   │       ├── notifications.page.js
-│   │   │       ├── metrics.page.js
-│   │   │       ├── surge.page.js
-│   │   │       ├── admin.service.js
-│   │   │       └── components/
-│   │   │           ├── verification-table.js
-│   │   │           ├── audit-table.js
-│   │   │           ├── metrics-cards.js
-│   │   │           └── surge-panel.js
+│   │   │   │   ├── RequestCard.jsx
+│   │   │   │   ├── RequestForm.jsx
+│   │   │   │   ├── HospitalAllocationList.jsx
+│   │   │   │   ├── DonorFallbackStatus.jsx
+│   │   │   │   └── DonorPledgeList.jsx
+│   │   │   ├── blood-bank/
+│   │   │   │   ├── IncomingRequestCard.jsx
+│   │   │   │   └── BankAllocationList.jsx
+│   │   │   └── donor/
+│   │   │       ├── DonorProfileForm.jsx
+│   │   │       ├── AvailabilityControl.jsx
+│   │   │       ├── AlertCard.jsx
+│   │   │       ├── PledgeControl.jsx
+│   │   │       └── LocationSharingControl.jsx
 │   │   │
-│   │   ├── styles/
-│   │   │   ├── reset.css
-│   │   │   ├── tokens.css
-│   │   │   ├── layout.css
-│   │   │   ├── components.css
-│   │   │   ├── forms.css
-│   │   │   └── pages.css
+│   │   ├── utils/
+│   │   │   ├── dates.js
+│   │   │   ├── blood-groups.js
+│   │   │   └── formatters.js
 │   │   │
-│   │   └── utils/
-│   │       ├── dom.js
-│   │       ├── time.js
-│   │       ├── validation.js
-│   │       └── format.js
+│   │   └── styles/
+│   │       └── index.css
 │   │
 │   ├── tests/
-│   │   ├── auth-ui.test.js
-│   │   ├── xss-rendering.test.js
-│   │   └── request-ui.test.js
+│   │   ├── setup.js
+│   │   ├── auth.test.jsx
+│   │   ├── hospital.test.jsx
+│   │   ├── blood-bank.test.jsx
+│   │   ├── donor.test.jsx
+│   │   └── security.test.jsx
 │   │
-│   ├── package.json
-│   └── README.md
+│   ├── index.html
+│   ├── vite.config.js
+│   └── package.json
 │
 ├── docs/
 │   ├── Architecture.md
@@ -477,47 +484,59 @@ These files should contain the `.immediate()` transaction logic.
 
 ---
 
-# 5. Frontend Module Pattern
+# 5. Frontend Architecture Pattern (React + Vite)
 
-Example:
+The frontend is structured into modular layers following clean separation of concerns:
 
 ```text
-modules/hospital/
-├── dashboard.page.js
-├── create-request.page.js
-├── request-detail.page.js
-├── request-history.page.js
-├── hospital.service.js
-└── components/
+src/
+├── api/          # Centralized REST API endpoints & memory-only CSRF
+├── components/   # Presentational & interactive domain components
+├── context/      # Application-level providers (AuthContext, CsrfContext)
+├── hooks/        # Reusable React hooks (useAuth, useCsrf, usePolling)
+├── layouts/      # Role-based shell layouts (AppLayout, AuthLayout, HospitalLayout...)
+├── pages/        # Route page components (HospitalDashboardPage, InventoryPage...)
+├── router/       # Router wiring & protected/role-based route guards
+├── styles/       # Design tokens & responsive CSS stylesheets
+└── utils/        # Date, formatting, and blood group helper utilities
 ```
 
-## `*.page.js`
+### Dependency Direction:
+```text
+Page / Component
+       |
+       v
+Hook / Context
+       |
+       v
+API module
+       |
+       v
+api-client
+       |
+       v
+REST API
+```
 
-Page-level rendering and event registration.
-
-## `*.service.js`
-
-Role-specific API functions.
+## `pages/`
+Full-page views associated with specific routes. Handle data orchestration, loading states, and error handling.
 
 ## `components/`
+Reusable UI units for specific domains (e.g., `RequestForm.jsx`, `BankAllocationList.jsx`, `LocationSharingControl.jsx`).
 
-Reusable UI pieces for that domain.
+## `api/`
+Encapsulates HTTP requests and schema serialization for each backend domain module.
 
 ---
 
-# 6. Frontend XSS Rule
+# 6. Frontend XSS-Safety Rule (React JSX)
 
-Create DOM utilities that encourage safe rendering.
+React automatically escapes variables rendered in JSX interpolation (e.g. `<p>{request.note}</p>`), preventing XSS by default.
 
-Example:
-
-```js
-export function setText(element, value) {
-    element.textContent = value ?? "";
-}
-```
-
-Do not create a general helper that inserts arbitrary HTML from API data.
+Rules:
+- Never use `dangerouslySetInnerHTML` for API data or user-controlled input.
+- Never manipulate the DOM directly with `element.innerHTML` or `insertAdjacentHTML`.
+- Automated regression tests continuously verify zero occurrences of unsafe HTML insertion in the frontend codebase.
 
 ---
 

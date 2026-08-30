@@ -872,51 +872,49 @@ Major escalation remains admin-confirmed.
 
 ---
 
-## 24. Frontend Design
+## 24. Frontend Design (React + Vite)
+
+### Architecture & Tech Stack
+- **Framework**: React 18 with Vite build tooling.
+- **Routing**: `react-router-dom` (v6) with `BrowserRouter`, `ProtectedRoute`, and `RoleRoute`.
+- **State Management**: React Context (`AuthContext`, `CsrfContext`) and custom hooks (`useAuth`, `useCsrf`, `usePolling`).
+- **Styling**: Modern, responsive Vanilla CSS with design tokens (`frontend/src/styles/index.css`), semantic card components, status badges, and mobile-friendly grids/tables.
 
 ### Shared UI Principles
-
-- role-specific navigation;
-- accessible labels;
-- no private donor fields in DOM;
-- visible loading/error/retry states;
-- confirmation for destructive actions;
-- coarse ETA display;
-- explicit "potential donor" wording;
-- no medical eligibility claims.
+- role-specific navigation via dedicated layouts (`HospitalLayout`, `BloodBankLayout`, `DonorLayout`, `AdminLayout`);
+- memory-only CSRF handling;
+- accessible form controls and validation states;
+- strict privacy invariant: no private donor fields (names, phone, email, raw coordinates) in the DOM;
+- comprehensive page states: `loading`, `success`, `empty`, `error`;
+- mutation states: `idle`, `submitting`, with button disabling during pending actions;
+- confirmation dialogs for destructive actions (cancel request, release allocation);
+- coarse ETA and distance display bands;
+- explicit "potential donor" clinical wording across all alert and pledge screens.
 
 ### Hospital Screen Set
-
-1. Login
-2. Dashboard
-3. Create Request
-4. Request Details/Status
-5. Request History
+1. `LoginPage.jsx` — Login & role routing
+2. `HospitalDashboardPage.jsx` — Active emergency requests & quick actions
+3. `CreateRequestPage.jsx` — Emergency request form with idempotent `clientRequestId`
+4. `RequestDetailPage.jsx` — Live multi-bank allocation status, donor fallback, and pseudonymous pledges
+5. `RequestListPage.jsx` — Emergency request history and status overview
+6. `HospitalProfilePage.jsx` — Hospital facility profile and verification status
 
 ### Blood Bank Screen Set
-
-1. Login
-2. Incoming Requests
-3. Request Detail / Allocation
-4. Inventory
-5. Allocation History
+1. `BloodBankProfilePage.jsx` — Bank profile and verification status
+2. `InventoryPage.jsx` — 8 red-cell inventory rows with version-conflict recovery
+3. `IncomingRequestsPage.jsx` — Live broadcast emergency requests
+4. `BloodBankRequestDetailPage.jsx` — Request details and stock allocation action
+5. `AllocationHistoryPage.jsx` — Active/historical allocations with release & complete controls
 
 ### Donor Screen Set
-
-1. Register/Login
-2. Donor Profile
-3. Availability
-4. Emergency Alerts
-5. Pledge Detail / Location Sharing
+1. `DonorDashboardPage.jsx` — Quick status, active alerts, and pledge overview
+2. `DonorProfilePage.jsx` — Contact details, location, and blood group
+3. `DonorAvailabilityPage.jsx` — Availability toggle and freshness timestamp
+4. `DonorAlertsPage.jsx` & `DonorAlertDetailPage.jsx` — Emergency alerts with clinical disclaimer
+5. `DonorPledgesPage.jsx` & `DonorPledgeDetailPage.jsx` — Pledge lifecycle, arrival confirmation, and explicit location sharing
 
 ### Admin Screen Set
-
-1. Verification Queue
-2. Open Requests
-3. Audit Log
-4. Notification Failures
-5. Surge Review
-6. Metrics
+1. `OrganizationVerificationPage.jsx` — Pending verification queue for hospitals and blood banks
 
 ---
 

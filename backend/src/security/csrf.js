@@ -59,16 +59,17 @@ function timingSafeEqual(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-/** Is the request's Origin (or Referer fallback) the configured app origin? */
+/** Is the request's Origin (or Referer fallback) the configured app or frontend origin? */
 function isAllowedOrigin(req) {
+  const allowed = new Set([config.appOrigin, config.frontendOrigin].filter(Boolean));
   const origin = req.get('origin');
   if (origin) {
-    return origin === config.appOrigin;
+    return allowed.has(origin);
   }
   const referer = req.get('referer');
   if (referer) {
     try {
-      return new URL(referer).origin === config.appOrigin;
+      return allowed.has(new URL(referer).origin);
     } catch {
       return false;
     }

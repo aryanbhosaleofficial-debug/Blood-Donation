@@ -16,6 +16,7 @@ test('builds config from a valid environment with sensible defaults', () => {
   assert.equal(cfg.nodeEnv, 'development');
   assert.equal(cfg.port, 3000);
   assert.equal(cfg.appOrigin, 'http://localhost:3000');
+  assert.equal(cfg.frontendOrigin, 'http://localhost:3000');
   assert.equal(cfg.appTimezone, 'Asia/Kolkata');
   assert.equal(cfg.requestTtlMinutes, 120);
   assert.equal(cfg.dbBusyTimeoutMs, 5000);

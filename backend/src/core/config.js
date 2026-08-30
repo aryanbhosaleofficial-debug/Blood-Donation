@@ -141,6 +141,7 @@ function buildConfig(env) {
 
     port: integer('PORT', 3000),
     appOrigin: string('APP_ORIGIN', 'http://localhost:3000'),
+    frontendOrigin: string('FRONTEND_ORIGIN', string('APP_ORIGIN', 'http://localhost:3000')),
     appTimezone,
     logLevel: oneOf('LOG_LEVEL', isTest ? 'silent' : 'info', VALID_LOG_LEVELS),
 

@@ -39,10 +39,11 @@ The system allows verified hospitals to post urgent red-cell requests, checks pa
 - Express Rate Limit
 
 ### Frontend
-- HTML
-- CSS
-- Vanilla JavaScript modules
-- Fetch API
+- React 18
+- Vite
+- React Router (v6)
+- React Context & Custom Hooks
+- Vanilla CSS design tokens & responsive components
 - Browser Geolocation API with locality/PIN fallback
 
 ---
@@ -113,30 +114,44 @@ See the complete documentation index in [docs/README.md](docs/README.md).
 
 ---
 
-## Quick Start (Phase 0)
+## Quick Start & Running Locally
 
 Requirements: Node.js 20+ (tested on 24) and npm.
 
+### 1. Setup & Installation
 ```bash
-npm install     # installs express, better-sqlite3, dotenv
-npm start       # creates .env (with a generated SESSION_SECRET) and the SQLite db, then serves on http://localhost:3000
+npm run setup          # creates .env and installs root dependencies
+cd frontend && npm install && cd ..  # installs frontend React dependencies
 ```
 
-Verify the foundation:
+### 2. Running Locally
+
+**Backend Server (Express API on `http://localhost:3000`):**
+```bash
+npm start              # starts Express backend server
+# or for watch mode:
+npm run dev
+```
+
+**Frontend Dev Server (React + Vite on `http://localhost:5173`):**
+```bash
+npm run dev:frontend   # starts Vite dev server with /api proxy to backend
+```
+
+### 3. Testing & Verification
 
 ```bash
-curl http://localhost:3000/api/health     # -> { "data": { "status": "ok", "db": "ok", ... } }
-npm run health-check                       # exits 0 when healthy
-npm test                                   # config / database / health / startup tests
+npm test               # runs backend Node.js test suite (225 tests)
+npm run test:frontend  # runs frontend Vitest suite (React testing library)
+npm run build:frontend # builds frontend production bundle to frontend/dist
+npm run race-test      # allocation concurrency test
+npm run pledge-race-test # donor pledge concurrency race test
+npm run health-check   # live health check against running backend
 ```
 
 Configuration lives in `.env` (see `.env.example` for every variable). `backend/src/core/config.js`
 is the only place that reads `process.env`; it fails fast with a readable message if a required
 variable is missing or invalid.
-
-Phase 0 delivers the project skeleton only: config, database bootstrap, error/logger/response
-helpers, the `/api/health` endpoint, and the frontend core (`api-client`, `router`, `session`).
-No authentication, sessions, CSRF, or domain modules yet - those follow in later phases.
 
 ---
 
