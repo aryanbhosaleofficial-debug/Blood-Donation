@@ -75,6 +75,24 @@ function buildConfig(env) {
     return parsed;
   };
 
+  const boolean = (key, fallback) => {
+    if (isBlank(env[key])) return fallback;
+    const raw = String(env[key]).trim().toLowerCase();
+    if (['1', 'true', 'yes', 'on'].includes(raw)) return true;
+    if (['0', 'false', 'no', 'off'].includes(raw)) return false;
+    errors.push(`Environment variable ${key} must be a boolean (received "${raw}")`);
+    return fallback;
+  };
+
+  const integerInRange = (key, fallback, min, max) => {
+    const value = integer(key, fallback);
+    if (value < min || value > max) {
+      errors.push(`Environment variable ${key} must be between ${min} and ${max} (received "${value}")`);
+      return fallback;
+    }
+    return value;
+  };
+
   const oneOf = (key, fallback, allowed) => {
     const value = string(key, fallback);
     if (!allowed.includes(value)) {
@@ -90,8 +108,8 @@ function buildConfig(env) {
 
   const sessionSecret = required('SESSION_SECRET');
   if (sessionSecret !== undefined) {
-    if (sessionSecret === 'replace-me') {
-      errors.push('SESSION_SECRET is still set to the placeholder value "replace-me"');
+    if (/^replace[-_]/i.test(sessionSecret) || sessionSecret === 'replace-me') {
+      errors.push('SESSION_SECRET is still set to a placeholder value - set a real random secret');
     } else if (sessionSecret.length < 16) {
       errors.push('SESSION_SECRET must be at least 16 characters long');
     }
@@ -118,6 +136,18 @@ function buildConfig(env) {
     logLevel: oneOf('LOG_LEVEL', isTest ? 'silent' : 'info', VALID_LOG_LEVELS),
 
     sessionSecret,
+    sessionMaxAgeHours: integer('SESSION_MAX_AGE_HOURS', 4),
+    trustProxy: boolean('TRUST_PROXY', false),
+    jsonBodyLimit: string('JSON_BODY_LIMIT', '100kb'),
+
+    bcryptRounds: integerInRange('BCRYPT_ROUNDS', 12, 4, 15),
+
+    login: {
+      maxAttempts: integer('LOGIN_MAX_ATTEMPTS', 5),
+      lockMinutes: integer('LOGIN_LOCK_MINUTES', 15),
+      rateLimitWindowMinutes: integer('LOGIN_RATE_LIMIT_WINDOW_MINUTES', 15),
+      rateLimitMax: integer('LOGIN_RATE_LIMIT_MAX', 50),
+    },
 
     databasePath: resolvePath(ROOT_DIR, string('DATABASE_PATH', './data/app.db')),
     sessionDatabasePath: resolvePath(ROOT_DIR, string('SESSION_DATABASE_PATH', './data/sessions.db')),
@@ -145,6 +175,7 @@ function buildConfig(env) {
   }
 
   Object.freeze(config.surge);
+  Object.freeze(config.login);
   return config;
 }
 

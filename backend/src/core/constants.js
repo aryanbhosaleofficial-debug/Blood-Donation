@@ -9,12 +9,23 @@
 
 const API_PREFIX = '/api';
 
+// Session cookie name (deliberately not the express-session default).
+const SESSION_COOKIE_NAME = 'blood.sid';
+
+// Header the frontend uses to send the synchronizer CSRF token.
+const CSRF_HEADER_NAME = 'x-csrf-token';
+
+// HTTP methods that must never mutate server state (and are CSRF-exempt).
+const SAFE_HTTP_METHODS = Object.freeze(['GET', 'HEAD', 'OPTIONS']);
+
 const ROLES = Object.freeze({
   ADMIN: 'ADMIN',
   HOSPITAL: 'HOSPITAL',
   BLOOD_BANK: 'BLOOD_BANK',
   DONOR: 'DONOR',
 });
+
+const ROLE_VALUES = Object.freeze(Object.values(ROLES));
 
 const BLOOD_GROUPS = Object.freeze(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
 
@@ -55,7 +66,11 @@ const NOTIFICATION_STATUS = Object.freeze({
 
 module.exports = Object.freeze({
   API_PREFIX,
+  SESSION_COOKIE_NAME,
+  CSRF_HEADER_NAME,
+  SAFE_HTTP_METHODS,
   ROLES,
+  ROLE_VALUES,
   BLOOD_GROUPS,
   COMPONENTS,
   REQUEST_STATUS,

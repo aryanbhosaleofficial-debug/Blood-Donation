@@ -1,28 +1,41 @@
 /**
- * frontend entry point (Phase 0).
+ * frontend entry point (Module 01).
  *
- * Boots the session probe and renders a tiny status page so the foundation
- * can be verified in a browser before a demo.
+ * - loads the server session (GET /api/auth/me)
+ * - bootstraps a CSRF token when authenticated
+ * - routes between a login view and a minimal authenticated placeholder
+ *
+ * All dynamic values are rendered with textContent (never innerHTML).
  */
 
 import { apiClient, ApiError } from './core/api-client.js';
-import { loadSession, getSession } from './core/session.js';
+import { load as loadSession, getUser, isAuthenticated } from './core/session.js';
+import { fetchCsrfToken } from './core/csrf.js';
 import { createRouter } from './core/router.js';
+import { renderLoginPage } from './modules/auth/login.page.js';
+import { logout } from './modules/auth/auth.service.js';
 
-function statusRow(label, value) {
-  const row = document.createElement('div');
-  row.className = 'row';
+function row(label, value) {
+  const el = document.createElement('div');
+  el.className = 'row';
   const k = document.createElement('span');
   k.className = 'k';
   k.textContent = label;
   const v = document.createElement('span');
   v.className = 'v';
   v.textContent = value;
-  row.append(k, v);
-  return row;
+  el.append(k, v);
+  return el;
 }
 
-function homeView(outlet) {
+function renderBadge() {
+  const badge = document.getElementById('session-badge');
+  if (!badge) return;
+  const user = getUser();
+  badge.textContent = user ? `Signed in as ${user.email} (${user.role})` : 'Not signed in';
+}
+
+function healthView(outlet) {
   const section = document.createElement('section');
   const h = document.createElement('h2');
   h.textContent = 'System Status';
@@ -37,18 +50,51 @@ function homeView(outlet) {
     .then((data) => {
       card.textContent = '';
       card.append(
-        statusRow('Backend', data.status ?? 'unknown'),
-        statusRow('Database', data.db ?? 'unknown'),
-        statusRow('Schema version', String(data.schemaVersion ?? '—')),
-        statusRow('Uptime (s)', String(data.uptimeSeconds ?? '—')),
-        statusRow('Server time', data.timestamp ?? '—'),
+        row('Backend', data.status ?? 'unknown'),
+        row('Database', data.db ?? 'unknown'),
+        row('Schema version', String(data.schemaVersion ?? '—')),
       );
     })
     .catch((err) => {
-      card.textContent =
-        err instanceof ApiError ? `Health check failed: ${err.message}` : 'Health check failed.';
+      card.textContent = err instanceof ApiError ? `Health check failed: ${err.message}` : 'Health check failed.';
       card.classList.add('error');
     });
+}
+
+function homeView(outlet, navigate) {
+  if (!isAuthenticated()) {
+    const p = document.createElement('p');
+    p.textContent = 'You are not signed in.';
+    const link = document.createElement('button');
+    link.type = 'button';
+    link.textContent = 'Go to sign in';
+    link.addEventListener('click', () => navigate('/login'));
+    outlet.append(p, link);
+    healthView(outlet);
+    return;
+  }
+
+  const user = getUser();
+  const section = document.createElement('section');
+  const h = document.createElement('h2');
+  h.textContent = 'Signed in';
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.append(row('Email', user.email), row('Role', user.role), row('Verified', user.isVerified ? 'yes' : 'no'));
+
+  const logoutBtn = document.createElement('button');
+  logoutBtn.type = 'button';
+  logoutBtn.textContent = 'Sign out';
+  logoutBtn.addEventListener('click', async () => {
+    logoutBtn.disabled = true;
+    await logout();
+    renderBadge();
+    navigate('/login');
+  });
+
+  section.append(h, card, logoutBtn);
+  outlet.append(section);
+  healthView(outlet);
 }
 
 function notFoundView(outlet) {
@@ -59,22 +105,37 @@ function notFoundView(outlet) {
 
 async function boot() {
   const outlet = document.getElementById('app');
-  const badge = document.getElementById('session-badge');
 
   await loadSession();
-  const s = getSession();
-  if (badge) {
-    badge.textContent = s.authenticated
-      ? 'Signed in'
-      : 'Not signed in — authentication arrives in Phase 1';
+  if (isAuthenticated()) {
+    try {
+      await fetchCsrfToken();
+    } catch {
+      /* refetched on demand */
+    }
   }
+  renderBadge();
 
   const router = createRouter({
     outlet,
-    routes: { '/': homeView },
+    routes: {
+      '/': (el) => homeView(el, (p) => router.navigate(p)),
+      '/login': (el) =>
+        renderLoginPage(el, {
+          onSuccess: async () => {
+            renderBadge();
+            router.navigate('/');
+          },
+        }),
+    },
     fallback: notFoundView,
   });
+
   router.start();
+
+  if (!isAuthenticated() && router.currentPath() !== '/login') {
+    router.navigate('/login');
+  }
 }
 
 boot();

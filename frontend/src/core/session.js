@@ -1,71 +1,67 @@
 /**
  * frontend/core/session
  *
- * Loads the current logged-in user once on page load and exposes it to the
- * rest of the frontend.
+ * Loads the current user from the server on page load and exposes it to the
+ * rest of the frontend. The server session is always the source of truth;
+ * nothing here is persisted to localStorage.
  *
- * Phase 0 note: authentication does not exist yet. There is no /api/auth/me
- * endpoint, so this module probes /api/health to confirm the backend is
- * reachable and always reports an unauthenticated session. Phase 1 replaces
- * the probe with a real /api/auth/me call and wires up setCsrfToken().
+ *   load()             - GET /api/auth/me once, cache the result
+ *   getUser()          - cached user object or null
+ *   isAuthenticated()  - boolean
+ *   setUser(user)      - update the cache (e.g. right after login)
+ *   clear()            - drop the cached user and CSRF token
  */
 
-import { apiClient, ApiError, setCsrfToken } from './api-client.js';
+import { apiClient, ApiError } from './api-client.js';
+import { clearCsrfToken } from './csrf.js';
 
-const session = {
+const state = {
   loaded: false,
-  authenticated: false,
   user: null,
-  backendReachable: false,
-  error: null,
 };
 
 let loadPromise = null;
 
-async function fetchSession() {
+async function fetchMe() {
   try {
-    // Phase 1: replace with `const data = await apiClient.get('/auth/me');`
-    const health = await apiClient.get('/health');
-    session.backendReachable = Boolean(health && health.status === 'ok');
-    session.authenticated = false;
-    session.user = null;
-    session.error = null;
-    setCsrfToken(null);
+    const data = await apiClient.get('/auth/me');
+    state.user = data && data.user ? data.user : null;
   } catch (err) {
-    session.backendReachable = false;
-    session.authenticated = false;
-    session.user = null;
-    session.error = err instanceof ApiError ? err : new ApiError('UNKNOWN', String(err), 0);
+    // 401 => not signed in. Any other failure => also treat as unauthenticated
+    // for bootstrap purposes (the UI will surface connection errors elsewhere).
+    if (!(err instanceof ApiError)) {
+      state.user = null;
+    } else {
+      state.user = null;
+    }
   } finally {
-    session.loaded = true;
+    state.loaded = true;
   }
-  return getSession();
+  return getUser();
 }
 
-/** Kick off (or reuse) the one-time session load. */
-export function loadSession() {
+export function load() {
   if (!loadPromise) {
-    loadPromise = fetchSession();
+    loadPromise = fetchMe();
   }
   return loadPromise;
 }
 
-/** Synchronous snapshot of the session state. */
-export function getSession() {
-  return { ...session };
-}
-
-/** The current user object, or null when not signed in. */
-export function getCurrentUser() {
-  return session.user;
+export function getUser() {
+  return state.user ? { ...state.user } : null;
 }
 
 export function isAuthenticated() {
-  return session.authenticated;
+  return state.user !== null;
 }
 
-/** Force the next loadSession() call to hit the network again. */
-export function resetSession() {
+export function setUser(user) {
+  state.user = user || null;
+}
+
+export function clear() {
+  state.user = null;
   loadPromise = null;
-  session.loaded = false;
+  state.loaded = false;
+  clearCsrfToken();
 }

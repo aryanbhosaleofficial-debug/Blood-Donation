@@ -9,15 +9,21 @@
     "prestart": "node scripts/ensure-env.js",
     "start": "node backend/src/server.js",
     "dev": "node --watch backend/src/server.js",
-    "test": "node --test \"backend/tests/*.test.js\"",
+    "test": "node --test \"backend/tests/**/*.test.js\"",
     "health-check": "node scripts/health-check.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^11.10.0",
+    "connect-sqlite3": "^0.9.18",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "zod": "^4.5.4"
   }
 }

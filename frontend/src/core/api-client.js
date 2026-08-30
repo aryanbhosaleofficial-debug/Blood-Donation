@@ -4,25 +4,20 @@
  * Thin fetch wrapper shared by every frontend module.
  *
  *  - prefixes /api
+ *  - always sends the session cookie (same-origin)
  *  - sends & parses JSON
- *  - attaches the CSRF header on state-changing requests (Phase 1+)
+ *  - attaches the CSRF token (from core/csrf) on state-changing requests only
  *  - unwraps the { data } success envelope
  *  - throws a consistent ApiError on any non-2xx response or network failure
+ *
+ * No authentication state is stored here or in localStorage - the server
+ * session is the source of truth.
  */
+
+import { getCsrfToken } from './csrf.js';
 
 const API_PREFIX = '/api';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
-
-let csrfToken = null;
-
-/** Set the per-session CSRF token (wired up in Phase 1). */
-export function setCsrfToken(token) {
-  csrfToken = token || null;
-}
-
-export function getCsrfToken() {
-  return csrfToken;
-}
 
 export class ApiError extends Error {
   constructor(code, message, status, details) {
@@ -43,8 +38,12 @@ async function request(pathname, { method = 'GET', body, headers = {}, signal } 
     finalHeaders['Content-Type'] = 'application/json';
     init.body = JSON.stringify(body);
   }
-  if (!SAFE_METHODS.has(upperMethod) && csrfToken) {
-    finalHeaders['X-CSRF-Token'] = csrfToken;
+
+  if (!SAFE_METHODS.has(upperMethod)) {
+    const token = getCsrfToken();
+    if (token) {
+      finalHeaders['X-CSRF-Token'] = token;
+    }
   }
 
   let response;
@@ -82,5 +81,5 @@ export const apiClient = {
   post: (pathname, body, options) => request(pathname, { ...options, method: 'POST', body }),
   patch: (pathname, body, options) => request(pathname, { ...options, method: 'PATCH', body }),
   put: (pathname, body, options) => request(pathname, { ...options, method: 'PUT', body }),
-  del: (pathname, options) => request(pathname, { ...options, method: 'DELETE' }),
+  delete: (pathname, options) => request(pathname, { ...options, method: 'DELETE' }),
 };

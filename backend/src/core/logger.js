@@ -21,6 +21,10 @@ const REDACT_KEYS = new Set([
   'password',
   'passwd',
   'pwd',
+  'passwordhash',
+  'password_hash',
+  'newpassword',
+  'currentpassword',
   'secret',
   'session_secret',
   'sessionsecret',
@@ -29,14 +33,18 @@ const REDACT_KEYS = new Set([
   'refreshtoken',
   'csrf',
   'csrftoken',
+  'csrf_token',
   'x-csrf-token',
   '_csrf',
   'authorization',
   'cookie',
   'set-cookie',
+  'session',
   'sessionid',
+  'session_id',
   'sid',
   'connect.sid',
+  'blood.sid',
   'apikey',
   'api_key',
   'lat',
@@ -52,6 +60,16 @@ const REDACT_KEYS = new Set([
   'phone_private',
   'email_private',
 ]);
+
+// Substring matches (lower-cased) that also trigger redaction, so variants like
+// "userPassword" or "xCsrfToken" are caught even if not listed explicitly.
+const REDACT_SUBSTRINGS = ['password', 'secret', 'csrf', 'cookie'];
+
+function shouldRedact(key) {
+  const lower = key.toLowerCase();
+  if (REDACT_KEYS.has(lower)) return true;
+  return REDACT_SUBSTRINGS.some((needle) => lower.includes(needle));
+}
 
 const REDACTED = '[REDACTED]';
 const MAX_DEPTH = 6;
@@ -71,7 +89,7 @@ function redact(value, depth = 0) {
   }
   const out = {};
   for (const [key, val] of Object.entries(value)) {
-    out[key] = REDACT_KEYS.has(key.toLowerCase()) ? REDACTED : redact(val, depth + 1);
+    out[key] = shouldRedact(key) ? REDACTED : redact(val, depth + 1);
   }
   return out;
 }

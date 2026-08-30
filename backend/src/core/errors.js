@@ -56,6 +56,12 @@ class ConflictError extends AppError {
   }
 }
 
+class TooManyRequestsError extends AppError {
+  constructor(message = 'Too many requests. Please try again later.', options = {}) {
+    super(message, { code: 'TOO_MANY_REQUESTS', status: 429, ...options });
+  }
+}
+
 class ServiceUnavailableError extends AppError {
   constructor(message = 'A required dependency is unavailable.', options = {}) {
     super(message, { code: 'SERVICE_UNAVAILABLE', status: 503, ...options });
@@ -95,6 +101,7 @@ module.exports = {
   ForbiddenError,
   NotFoundError,
   ConflictError,
+  TooManyRequestsError,
   ServiceUnavailableError,
   httpStatusFor,
   toErrorBody,
