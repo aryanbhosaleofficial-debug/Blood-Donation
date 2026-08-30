@@ -10,7 +10,8 @@
     "start": "node backend/src/server.js",
     "dev": "node --watch backend/src/server.js",
     "test": "node --test \"backend/tests/**/*.test.js\"",
-    "health-check": "node scripts/health-check.js"
+    "health-check": "node scripts/health-check.js",
+    "race-test": "node scripts/race-test.js"
   },
   "engines": {
     "node": ">=20"

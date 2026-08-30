@@ -12,7 +12,9 @@ const { getDb } = require('../../core/database');
 const COLUMNS = `
   id, client_request_id, hospital_id, blood_group, component,
   units_needed, backup_slots, urgency, status, note,
-  is_synthetic, scenario_id, created_at, expires_at, closed_at
+  is_synthetic, scenario_id, created_at, expires_at, closed_at,
+  (SELECT COALESCE(SUM(a.units_reserved), 0) FROM request_allocations a
+    WHERE a.request_id = requests.id AND a.status IN ('RESERVED','COMPLETED')) AS bank_units_allocated
 `;
 
 // request row joined with hospital facility context, for the bank view.
@@ -20,6 +22,12 @@ const BANK_SELECT = `
   SELECT r.id, r.client_request_id, r.hospital_id, r.blood_group, r.component,
          r.units_needed, r.backup_slots, r.urgency, r.status, r.note,
          r.is_synthetic, r.scenario_id, r.created_at, r.expires_at, r.closed_at,
+         (SELECT COALESCE(SUM(a.units_reserved), 0) FROM request_allocations a
+           WHERE a.request_id=r.id AND a.status IN ('RESERVED','COMPLETED')) AS bank_units_allocated,
+         (SELECT a.status FROM request_allocations a
+           WHERE a.request_id=r.id AND a.bank_id=rb.bank_id) AS own_allocation_status,
+         (SELECT a.id FROM request_allocations a
+           WHERE a.request_id=r.id AND a.bank_id=rb.bank_id) AS own_allocation_id,
          h.name AS h_name, h.city AS h_city, h.locality AS h_locality,
          rb.status AS broadcast_status
   FROM requests r
@@ -110,6 +118,11 @@ function close(db, id, status) {
   return db.prepare(`SELECT ${COLUMNS} FROM requests WHERE id = ?`).get(id);
 }
 
+function setStatus(db, id, status, closeRequest = false) {
+  db.prepare(`UPDATE requests SET status=?, closed_at=${closeRequest ? "strftime('%Y-%m-%dT%H:%M:%fZ','now')" : 'NULL'} WHERE id=?`).run(status,id);
+  return db.prepare(`SELECT ${COLUMNS} FROM requests WHERE id=?`).get(id);
+}
+
 module.exports = {
   findByClientId,
   findById,
@@ -119,4 +132,5 @@ module.exports = {
   findForBankById,
   insert,
   close,
+  setStatus,
 };

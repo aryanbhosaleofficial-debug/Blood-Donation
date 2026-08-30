@@ -19,7 +19,7 @@ export async function renderIncomingRequests(outlet, ctx) {
   h.textContent = 'Incoming emergency requests';
   const note = document.createElement('p');
   note.className = 'app-footer';
-  note.textContent = 'Updates by polling (~3s). Not guaranteed real-time. Viewing only in this version.';
+  note.textContent = 'Updates by polling (~3s). Not guaranteed real-time. Open a request to reserve matching stock.';
   const status = document.createElement('p');
   status.setAttribute('role', 'status');
   const listEl = document.createElement('div');

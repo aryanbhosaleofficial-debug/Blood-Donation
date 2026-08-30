@@ -18,4 +18,5 @@ export const hospitalService = {
   getRequest: (id) => apiClient.get(`/requests/${id}`),
   cancelRequest: (id) => apiClient.post(`/requests/${id}/cancel`, {}),
   completeRequest: (id) => apiClient.post(`/requests/${id}/complete`, {}),
+  requestAllocations: (id) => apiClient.get(`/requests/${id}/allocations`),
 };

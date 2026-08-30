@@ -55,20 +55,18 @@ test('K: CANCELLED -> CANCELLED and COMPLETED -> CANCELLED are rejected with 409
   assert.equal(complete.status, 409);
 });
 
-test('L: OPEN -> COMPLETED sets closed_at and closes broadcast rows', async () => {
+test('L: OPEN cannot complete until covered', async () => {
   const { client, token, requestId } = await setup('l-complete@m3.test');
   const res = await client.post(`/api/requests/${requestId}/complete`, {}, write(token));
-  assert.equal(res.status, 200);
-  assert.equal(res.json.data.request.status, 'COMPLETED');
-  assert.ok(res.json.data.request.closedAt);
-
-  const open = getDb().prepare('SELECT COUNT(*) AS n FROM request_broadcasts WHERE request_id = ? AND status <> ?').get(requestId, 'CLOSED');
-  assert.equal(open.n, 0);
+  assert.equal(res.status, 409);
+  assert.equal(res.json.error.code, 'REQUEST_NOT_COVERED');
 });
 
-test('L: COMPLETED -> COMPLETED is rejected', async () => {
+test('L: COVERED -> COMPLETED closes the request; repeat is rejected', async () => {
   const { client, token, requestId } = await setup('l-repeat@m3.test');
-  await client.post(`/api/requests/${requestId}/complete`, {}, write(token));
+  getDb().prepare("UPDATE requests SET status='COVERED' WHERE id=?").run(requestId);
+  const first=await client.post(`/api/requests/${requestId}/complete`, {}, write(token));
+  assert.equal(first.status,200);
   const again = await client.post(`/api/requests/${requestId}/complete`, {}, write(token));
   assert.equal(again.status, 409);
   assert.equal(again.json.error.code, 'INVALID_REQUEST_STATE');

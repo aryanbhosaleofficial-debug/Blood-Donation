@@ -1,9 +1,10 @@
 -- Community Blood Donation Matching System
--- Bootstrap through Module 03 (Emergency Requests) schema.
+-- Bootstrap through Module 04 (Atomic Blood-Bank Allocation) schema.
 --
 -- Module 01 adds `users`; Module 02 adds organization profiles and inventory;
 -- Module 03 adds `requests` and `request_broadcasts`.
--- Later allocation, donor, notification, and surge domains are intentionally absent.
+-- Module 04 adds atomic bank allocations. Later donor, notification, and surge
+-- domains are intentionally absent.
 --
 -- This file is executed on every startup and MUST be idempotent.
 
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS app_meta (
 
 -- schema_version is upserted so re-running the bootstrap keeps it current.
 INSERT INTO app_meta (key, value)
-VALUES ('schema_version', '3')
+VALUES ('schema_version', '4')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now');
 
 INSERT INTO app_meta (key, value)
@@ -174,3 +175,24 @@ CREATE TABLE IF NOT EXISTS request_broadcasts (
 
 CREATE INDEX IF NOT EXISTS idx_request_broadcasts_bank ON request_broadcasts(bank_id);
 CREATE INDEX IF NOT EXISTS idx_request_broadcasts_request ON request_broadcasts(request_id);
+
+-- ---------------------------------------------------------------------------
+-- Module 04: one atomic blood-bank allocation per bank/request
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS request_allocations (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id     INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+  bank_id        INTEGER NOT NULL REFERENCES blood_banks(id) ON DELETE CASCADE,
+  units_reserved INTEGER NOT NULL CHECK (typeof(units_reserved) = 'integer' AND units_reserved > 0),
+  status         TEXT NOT NULL DEFAULT 'RESERVED' CHECK (status IN ('RESERVED', 'RELEASED', 'COMPLETED')),
+  reserved_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  released_at    TEXT,
+  completed_at   TEXT,
+  created_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  UNIQUE (request_id, bank_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_request_allocations_request ON request_allocations(request_id);
+CREATE INDEX IF NOT EXISTS idx_request_allocations_bank ON request_allocations(bank_id);
+CREATE INDEX IF NOT EXISTS idx_request_allocations_status ON request_allocations(status);

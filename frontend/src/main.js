@@ -23,6 +23,7 @@ import { renderBankProfile } from './modules/bank/profile.page.js';
 import { renderInventory } from './modules/bank/inventory.page.js';
 import { renderIncomingRequests } from './modules/bank/incoming-requests.page.js';
 import { renderBankRequestDetail } from './modules/bank/request-detail.page.js';
+import { renderAllocationHistory } from './modules/bank/allocation-history.page.js';
 import { renderAdminVerification } from './modules/admin/verification.page.js';
 
 function row(label, value) {
@@ -47,7 +48,7 @@ function renderBadge() {
 
 function renderNav(navigate) {
   const nav=document.getElementById('role-nav'); nav.replaceChildren(); const user=getUser(); if(!user)return;
-  const links=user.role==='HOSPITAL'?[['Dashboard','/hospital/dashboard'],['Profile','/hospital/profile'],['Create Request','/hospital/create-request'],['My Requests','/hospital/requests']]:user.role==='BLOOD_BANK'?[['Profile','/bank/profile'],['Inventory','/bank/inventory'],['Incoming Requests','/bank/incoming-requests']]:user.role==='ADMIN'?[['Organization Verification','/admin/organizations']]:[['Home','/']];
+  const links=user.role==='HOSPITAL'?[['Dashboard','/hospital/dashboard'],['Profile','/hospital/profile'],['Create Request','/hospital/create-request'],['My Requests','/hospital/requests']]:user.role==='BLOOD_BANK'?[['Profile','/bank/profile'],['Inventory','/bank/inventory'],['Incoming Requests','/bank/incoming-requests'],['My Allocations','/bank/allocations']]:user.role==='ADMIN'?[['Organization Verification','/admin/organizations']]:[['Home','/']];
   for(const [label,path] of links){const a=document.createElement('a');a.href=`#${path}`;a.textContent=label;a.addEventListener('click',e=>{e.preventDefault();navigate(path);});nav.append(a);}
 }
 
@@ -154,6 +155,7 @@ async function boot() {
       '/bank/inventory': renderInventory,
       '/bank/incoming-requests': (el) => renderIncomingRequests(el, { navigate: (p) => router.navigate(p) }),
       '/bank/request-detail': (el) => renderBankRequestDetail(el, { navigate: (p) => router.navigate(p) }),
+      '/bank/allocations': renderAllocationHistory,
       '/admin/organizations': renderAdminVerification,
     },
     fallback: notFoundView,

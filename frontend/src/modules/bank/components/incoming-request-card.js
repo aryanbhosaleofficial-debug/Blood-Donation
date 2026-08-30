@@ -1,8 +1,7 @@
 /**
  * frontend/modules/bank/components/incoming-request-card
  *
- * One incoming (broadcast) request as seen by a blood bank. Module 03 is
- * view-only: no Accept / Reserve / Allocate controls.
+ * One actionable incoming request as seen by a blood bank.
  */
 
 function fmt(iso) {
@@ -25,12 +24,15 @@ export function incomingRequestCard(request, { onOpen }) {
   const times = document.createElement('p');
   times.className = 'request-card__meta';
   times.textContent = `Created ${fmt(request.createdAt)} · expires ${fmt(request.expiresAt)}`;
+  const coverage = document.createElement('p');
+  coverage.className = 'request-card__meta';
+  coverage.textContent = `Allocated ${request.bankUnitsAllocated} · remaining ${request.remainingBankUnits}`;
 
   const view = document.createElement('button');
   view.type = 'button';
   view.textContent = 'View details';
   view.addEventListener('click', () => onOpen(request.id));
 
-  card.append(title, hospital, times, view);
+  card.append(title, hospital, coverage, times, view);
   return card;
 }

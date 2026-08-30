@@ -18,10 +18,10 @@ const broadcastsRepo = require('../broadcasts/broadcasts.repository');
 const repo = require('./requests.repository');
 const policy = require('./requests.policy');
 const serializer = require('./requests.serializer');
+const { createAllocationTransactions } = require('../allocations/allocations.transaction');
 const {
   REQUEST_ERROR,
   REQUEST_STATUS,
-  CANCELABLE_FROM,
   COMPLETABLE_FROM,
 } = require('./requests.constants');
 
@@ -129,14 +129,15 @@ function getOne(sessionUser, requestId) {
 }
 
 function transition(sessionUser, requestId, targetStatus, allowedFrom) {
-  const updated = getDb().transaction(() => {
+  const transaction = getDb().transaction(() => {
     const row = repo.findById(requestId);
     policy.assertHospitalOwnership(sessionUser, row);
     policy.assertTransitionAllowed(row.status, allowedFrom);
     const next = repo.close(getDb(), requestId, targetStatus);
     broadcastsService.closeForRequest(getDb(), requestId);
     return next;
-  })();
+  });
+  const updated = transaction.immediate();
 
   logger.info('emergency request closed', {
     requestId: updated.id,
@@ -147,10 +148,17 @@ function transition(sessionUser, requestId, targetStatus, allowedFrom) {
 }
 
 function cancel(sessionUser, requestId) {
-  return transition(sessionUser, requestId, REQUEST_STATUS.CANCELLED, CANCELABLE_FROM);
+  const hospital = policy.resolveHospitalProfile(sessionUser.id);
+  const updated = createAllocationTransactions().cancelRequest({ hospitalId: hospital.id, actorUserId: sessionUser.id, requestId });
+  return { request: serializer.hospitalView(updated) };
 }
 
 function complete(sessionUser, requestId) {
+  const row = repo.findById(requestId);
+  policy.assertHospitalOwnership(sessionUser, row);
+  if (row.status === REQUEST_STATUS.OPEN) {
+    throw new ConflictError('The request must be covered before it can be completed.', { code: REQUEST_ERROR.NOT_COVERED });
+  }
   return transition(sessionUser, requestId, REQUEST_STATUS.COMPLETED, COMPLETABLE_FROM);
 }
 

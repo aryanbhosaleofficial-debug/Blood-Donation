@@ -16,4 +16,8 @@ export const bankService = {
   // Module 03 - incoming emergency requests (read-only)
   incomingRequests: () => apiClient.get('/blood-bank/requests'),
   incomingRequest: (id) => apiClient.get(`/blood-bank/requests/${id}`),
+  allocate: (id) => apiClient.post(`/requests/${id}/allocate`, {}),
+  allocations: () => apiClient.get('/blood-bank/allocations'),
+  releaseAllocation: (id) => apiClient.post(`/allocations/${id}/release`, {}),
+  completeAllocation: (id) => apiClient.post(`/allocations/${id}/complete`, {}),
 };

@@ -20,6 +20,8 @@ const { validate } = require('../../middleware/validate');
 const { ROLES } = require('../../core/constants');
 const schemas = require('./requests.schemas');
 const c = require('./requests.controller');
+const allocationsController = require('../allocations/allocations.controller');
+const allocationSchemas = require('../allocations/allocations.schemas');
 
 router.post(
   '/',
@@ -34,6 +36,23 @@ router.get(
   requireRole(ROLES.HOSPITAL, ROLES.ADMIN),
   validate(schemas.listRequestsQuerySchema, 'query'),
   c.list,
+);
+
+router.get(
+  '/:requestId/allocations',
+  requireRole(ROLES.HOSPITAL),
+  validate(allocationSchemas.requestIdParamSchema, 'params'),
+  allocationsController.hospitalList,
+);
+
+router.post(
+  '/:requestId/allocate',
+  requireRole(ROLES.BLOOD_BANK),
+  requireVerified,
+  validate(allocationSchemas.requestIdParamSchema, 'params'),
+  (req, res, next) => { req.requestId = req.validated.requestId; next(); },
+  validate(allocationSchemas.emptyBodySchema),
+  allocationsController.allocate,
 );
 
 router.get(

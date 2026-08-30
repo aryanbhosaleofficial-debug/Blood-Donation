@@ -16,12 +16,15 @@ function isPastExpiry(row, now = Date.now()) {
 }
 
 function baseFields(row, now) {
+  const allocated = Number(row.bank_units_allocated || 0);
   return {
     id: row.id,
     clientRequestId: row.client_request_id,
     bloodGroup: row.blood_group,
     component: row.component,
     unitsNeeded: row.units_needed,
+    bankUnitsAllocated: allocated,
+    remainingBankUnits: Math.max(row.units_needed - allocated, 0),
     backupSlots: row.backup_slots,
     urgency: row.urgency,
     status: row.status,
@@ -57,6 +60,7 @@ function bankView(row, now = Date.now()) {
       locality: row.h_locality ?? null,
     },
     broadcastStatus: row.broadcast_status ?? null,
+    ownAllocation: row.own_allocation_id ? { id: row.own_allocation_id, status: row.own_allocation_status } : null,
   };
 }
 

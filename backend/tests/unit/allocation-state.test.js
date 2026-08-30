@@ -1,0 +1,2 @@
+'use strict';require('../helpers/env');const{test}=require('node:test');const assert=require('node:assert/strict');const{assertReserved}=require('../../src/modules/allocations/allocations.policy');
+test('only RESERVED allocations may transition',()=>{assert.doesNotThrow(()=>assertReserved({status:'RESERVED'}));for(const status of['RELEASED','COMPLETED'])assert.throws(()=>assertReserved({status}),e=>e.status===409&&e.code==='INVALID_ALLOCATION_STATE');});

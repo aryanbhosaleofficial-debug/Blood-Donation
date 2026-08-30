@@ -1,0 +1,40 @@
+'use strict';
+
+const { ALLOCATION_STATUS, REQUEST_STATUS, COMPONENTS } = require('../../core/constants');
+
+const ACTIVE_ALLOCATION_STATUSES = Object.freeze([
+  ALLOCATION_STATUS.RESERVED,
+  ALLOCATION_STATUS.COMPLETED,
+]);
+
+const ALLOCATION_ERROR = Object.freeze({
+  NOT_FOUND: 'ALLOCATION_NOT_FOUND',
+  INVALID_STATE: 'INVALID_ALLOCATION_STATE',
+  ALREADY_COVERED: 'ALREADY_COVERED',
+  REQUEST_NOT_OPEN: 'REQUEST_NOT_OPEN',
+  NO_STOCK: 'NO_STOCK',
+  INVENTORY_NOT_CONFIGURED: 'INVENTORY_NOT_CONFIGURED',
+  INVENTORY_CHANGED: 'INVENTORY_CHANGED',
+  INVENTORY_LIMIT: 'INVENTORY_LIMIT_EXCEEDED',
+  BANK_ALREADY_ALLOCATED: 'BANK_ALREADY_ALLOCATED',
+  BROADCAST_NOT_FOUND: 'REQUEST_NOT_FOUND',
+  COMPLETED_ALLOCATION_EXISTS: 'COMPLETED_ALLOCATION_EXISTS',
+});
+
+function remainingUnits(unitsNeeded, activeAllocated) {
+  return Math.max(unitsNeeded - activeAllocated, 0);
+}
+
+function reservableUnits(remaining, available) {
+  return Math.max(Math.min(remaining, available), 0);
+}
+
+module.exports = {
+  ALLOCATION_STATUS,
+  REQUEST_STATUS,
+  RED_CELLS: COMPONENTS.RED_CELLS,
+  ACTIVE_ALLOCATION_STATUSES,
+  ALLOCATION_ERROR,
+  remainingUnits,
+  reservableUnits,
+};

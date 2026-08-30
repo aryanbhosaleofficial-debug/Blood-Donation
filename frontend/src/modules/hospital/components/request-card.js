@@ -19,12 +19,15 @@ export function requestCard(request, { onOpen }) {
   const meta = document.createElement('p');
   meta.className = 'request-card__meta';
   meta.textContent = `Created ${formatTime(request.createdAt)} · expires ${formatTime(request.expiresAt)}`;
+  const coverage = document.createElement('p');
+  coverage.className = 'request-card__meta';
+  coverage.textContent = `Allocated ${request.bankUnitsAllocated} · remaining ${request.remainingBankUnits}`;
 
   const open = document.createElement('button');
   open.type = 'button';
   open.textContent = 'View';
   open.addEventListener('click', () => onOpen(request.id));
 
-  card.append(head, meta, open);
+  card.append(head, meta, coverage, open);
   return card;
 }

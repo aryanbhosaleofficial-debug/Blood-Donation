@@ -9,6 +9,7 @@
 import { ApiError } from '../../core/api-client.js';
 import { hospitalService, getSelectedRequestId } from './hospital.service.js';
 import { field, statusBadge, formatTime } from './components/request-status.js';
+import { hospitalAllocationList } from './components/allocation-list.js';
 
 export async function renderRequestDetail(outlet, ctx) {
   const navigate = (ctx && ctx.navigate) || (() => {});
@@ -31,13 +32,15 @@ export async function renderRequestDetail(outlet, ctx) {
     status.textContent = 'Loading…';
     body.replaceChildren();
     try {
-      const data = await hospitalService.getRequest(id);
+      const [data, allocationData] = await Promise.all([hospitalService.getRequest(id), hospitalService.requestAllocations(id)]);
       const r = data.request;
       body.append(
         field('Status', statusBadge(r)),
         field('Blood group', r.bloodGroup),
         field('Component', r.component),
         field('Units needed', r.unitsNeeded),
+        field('Allocated by banks', r.bankUnitsAllocated),
+        field('Remaining units', r.remainingBankUnits),
         field('Urgency', r.urgency),
         field('Note', r.note),
         field('Created', formatTime(r.createdAt)),
@@ -45,9 +48,15 @@ export async function renderRequestDetail(outlet, ctx) {
         field('Closed', r.closedAt ? formatTime(r.closedAt) : '-'),
         field('Banks notified', data.broadcast ? data.broadcast.bankCount : '-'),
       );
+      if (r.status === 'COVERED') {
+        const covered = document.createElement('p'); covered.textContent = 'Coverage target reached. This does not indicate clinical readiness.'; body.append(covered);
+      }
+      body.append(hospitalAllocationList(allocationData.allocations));
 
-      if (r.status === 'OPEN') {
+      if (r.status === 'OPEN' || r.status === 'COVERED') {
         body.append(actionButton('Cancel request', () => hospitalService.cancelRequest(id), load));
+      }
+      if (r.status === 'COVERED') {
         body.append(actionButton('Mark completed', () => hospitalService.completeRequest(id), load));
       }
       status.textContent = '';

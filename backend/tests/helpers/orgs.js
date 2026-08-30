@@ -40,12 +40,13 @@ function insertBankProfile(userId, { name, licenseNo, city = 'Pune', locality = 
   return row;
 }
 
-async function createHospital({ email, verified = true, active = true, city, locality } = {}) {
+async function createHospital({ email, password, verified = true, active = true, city, locality } = {}) {
   const user = await createTestUser({
     email: email || `hospital_${rand()}@example.com`,
     role: 'HOSPITAL',
     isVerified: verified ? 1 : 0,
     isActive: active ? 1 : 0,
+    password,
   });
   const hospital = insertHospitalProfile(user.id, {
     name: `Hospital ${user.id}`,
@@ -57,12 +58,13 @@ async function createHospital({ email, verified = true, active = true, city, loc
   return { user, hospital };
 }
 
-async function createBank({ email, verified = true, active = true } = {}) {
+async function createBank({ email, password, verified = true, active = true } = {}) {
   const user = await createTestUser({
     email: email || `bank_${rand()}@example.com`,
     role: 'BLOOD_BANK',
     isVerified: verified ? 1 : 0,
     isActive: active ? 1 : 0,
+    password,
   });
   const bank = insertBankProfile(user.id, {
     name: `Bank ${user.id}`,

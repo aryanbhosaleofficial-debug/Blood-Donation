@@ -95,13 +95,22 @@ test('02: organization and inventory tables expose required constraints', () => 
   assert.match(inventorySql, /UNIQUE\s*\(bank_id,\s*blood_group,\s*component\)/i);
 });
 
+test('04: request_allocations has state, units, uniqueness and foreign keys', () => {
+  const db=getDb();const sql=db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='request_allocations'").get().sql;
+  assert.match(sql,/status IN \('RESERVED', 'RELEASED', 'COMPLETED'\)/);
+  assert.match(sql,/units_reserved\) = 'integer' AND units_reserved > 0/);
+  assert.match(sql,/UNIQUE \(request_id, bank_id\)/);
+  const targets=new Set(db.prepare('PRAGMA foreign_key_list(request_allocations)').all().map(x=>x.table));
+  assert.deepEqual(targets,new Set(['requests','blood_banks']));
+});
+
 test('N: schema bootstrap is idempotent (re-open the same file)', () => {
   // getDb() already ran the schema once; open a second connection to the same
   // file to prove CREATE ... IF NOT EXISTS + upsert do not error.
   const { openDatabase } = require('../../src/core/database');
   const second = openDatabase({ path: process.env.DATABASE_PATH });
   try {
-    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '3');
+    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '4');
   } finally {
     second.close();
   }
