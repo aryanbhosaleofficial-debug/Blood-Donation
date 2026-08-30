@@ -1,0 +1,23 @@
+{
+  "name": "community-blood-donation-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Community Blood Donation Matching System - a college CEP project for emergency red-cell sourcing coordination.",
+  "main": "backend/src/server.js",
+  "scripts": {
+    "setup": "node scripts/ensure-env.js && npm install",
+    "prestart": "node scripts/ensure-env.js",
+    "start": "node backend/src/server.js",
+    "dev": "node --watch backend/src/server.js",
+    "test": "node --test \"backend/tests/*.test.js\"",
+    "health-check": "node scripts/health-check.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

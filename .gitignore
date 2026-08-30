@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# SQLite database files
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+data/backups/
+
+# Test / build output
+coverage/
+dist/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

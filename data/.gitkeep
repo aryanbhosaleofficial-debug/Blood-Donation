@@ -1,0 +1,3 @@
+# Runtime SQLite database files live here (app.db, sessions.db).
+# The .db / .db-wal / .db-shm files are git-ignored; this file keeps the
+# directory in version control.

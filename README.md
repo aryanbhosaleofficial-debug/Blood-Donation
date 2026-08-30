@@ -113,6 +113,33 @@ See the complete documentation index in [docs/README.md](docs/README.md).
 
 ---
 
+## Quick Start (Phase 0)
+
+Requirements: Node.js 20+ (tested on 24) and npm.
+
+```bash
+npm install     # installs express, better-sqlite3, dotenv
+npm start       # creates .env (with a generated SESSION_SECRET) and the SQLite db, then serves on http://localhost:3000
+```
+
+Verify the foundation:
+
+```bash
+curl http://localhost:3000/api/health     # -> { "data": { "status": "ok", "db": "ok", ... } }
+npm run health-check                       # exits 0 when healthy
+npm test                                   # config / database / health / startup tests
+```
+
+Configuration lives in `.env` (see `.env.example` for every variable). `backend/src/core/config.js`
+is the only place that reads `process.env`; it fails fast with a readable message if a required
+variable is missing or invalid.
+
+Phase 0 delivers the project skeleton only: config, database bootstrap, error/logger/response
+helpers, the `/api/health` endpoint, and the frontend core (`api-client`, `router`, `session`).
+No authentication, sessions, CSRF, or domain modules yet - those follow in later phases.
+
+---
+
 ## MVP Scope
 
 The donor matching MVP supports:
