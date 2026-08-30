@@ -1,0 +1,1 @@
+import{apiClient}from'../../core/api-client.js';export const hospitalService={get:()=>apiClient.get('/hospital/profile'),create:d=>apiClient.post('/hospital/profile',d),update:d=>apiClient.patch('/hospital/profile',d)};

@@ -1,0 +1,1 @@
+'use strict';const config=require('../../core/config');function serialize(r,now=Date.now()){const updated=Date.parse(r.updated_at);return{id:r.id,bloodGroup:r.blood_group,component:r.component,unitsAvailable:r.units_available,version:r.version,updatedAt:r.updated_at,isStale:!Number.isFinite(updated)||now-updated>config.inventoryStaleMinutes*60000};}module.exports={serialize};

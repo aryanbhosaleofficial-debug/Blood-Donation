@@ -1,0 +1,1 @@
+'use strict';function serialize(r){return{userId:r.user_id,email:r.email,role:r.role,organizationId:r.organization_id,organizationName:r.organization_name,identityReference:r.identity_reference,city:r.city,isVerified:Boolean(r.is_verified),verifiedAt:r.verified_at,createdAt:r.created_at};}module.exports={serialize};

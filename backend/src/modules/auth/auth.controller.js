@@ -54,8 +54,19 @@ function logout(req, res, next) {
 }
 
 /** GET /api/auth/me  (requires auth) */
-function me(req, res) {
-  return sendSuccess(res, { user: usersService.toPublicUser(req.session.user) });
+function me(req, res, next) {
+  try {
+    const current = usersService.findById(req.session.user.id);
+    if (!current || !usersService.isActive(current)) {
+      req.session.destroy(() => {});
+      const { ForbiddenError } = require('../../core/errors');
+      throw new ForbiddenError('This account is inactive.', { code: 'ACCOUNT_INACTIVE' });
+    }
+    req.session.user = usersService.toSessionUser(current);
+    return sendSuccess(res, { user: usersService.toPublicUser(current) });
+  } catch (err) {
+    return next(err);
+  }
 }
 
 /** GET /api/auth/csrf-token  (requires auth) */

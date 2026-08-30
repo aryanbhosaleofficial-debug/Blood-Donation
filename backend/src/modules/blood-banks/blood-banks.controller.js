@@ -1,0 +1,1 @@
+'use strict'; const {sendSuccess}=require('../../core/response');const s=require('./blood-banks.service');function h(m,status=200){return(req,res,next)=>{try{return sendSuccess(res,s[m](req.user.id,req.validated),status);}catch(e){return next(e);}};}module.exports={create:h('create',201),get:h('get'),update:h('update')};

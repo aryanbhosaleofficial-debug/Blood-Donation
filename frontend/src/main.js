@@ -14,6 +14,10 @@ import { fetchCsrfToken } from './core/csrf.js';
 import { createRouter } from './core/router.js';
 import { renderLoginPage } from './modules/auth/login.page.js';
 import { logout } from './modules/auth/auth.service.js';
+import { renderHospitalProfile } from './modules/hospital/profile.page.js';
+import { renderBankProfile } from './modules/bank/profile.page.js';
+import { renderInventory } from './modules/bank/inventory.page.js';
+import { renderAdminVerification } from './modules/admin/verification.page.js';
 
 function row(label, value) {
   const el = document.createElement('div');
@@ -33,6 +37,12 @@ function renderBadge() {
   if (!badge) return;
   const user = getUser();
   badge.textContent = user ? `Signed in as ${user.email} (${user.role})` : 'Not signed in';
+}
+
+function renderNav(navigate) {
+  const nav=document.getElementById('role-nav'); nav.replaceChildren(); const user=getUser(); if(!user)return;
+  const links=user.role==='HOSPITAL'?[['Hospital Profile','/hospital/profile']]:user.role==='BLOOD_BANK'?[['Bank Profile','/bank/profile'],['Inventory','/bank/inventory']]:user.role==='ADMIN'?[['Organization Verification','/admin/organizations']]:[['Home','/']];
+  for(const [label,path] of links){const a=document.createElement('a');a.href=`#${path}`;a.textContent=label;a.addEventListener('click',e=>{e.preventDefault();navigate(path);});nav.append(a);}
 }
 
 function healthView(outlet) {
@@ -89,6 +99,7 @@ function homeView(outlet, navigate) {
     logoutBtn.disabled = true;
     await logout();
     renderBadge();
+    renderNav(navigate);
     navigate('/login');
   });
 
@@ -124,14 +135,20 @@ async function boot() {
         renderLoginPage(el, {
           onSuccess: async () => {
             renderBadge();
+            renderNav((p) => router.navigate(p));
             router.navigate('/');
           },
         }),
+      '/hospital/profile': renderHospitalProfile,
+      '/bank/profile': renderBankProfile,
+      '/bank/inventory': renderInventory,
+      '/admin/organizations': renderAdminVerification,
     },
     fallback: notFoundView,
   });
 
   router.start();
+  renderNav((p)=>router.navigate(p));
 
   if (!isAuthenticated() && router.currentPath() !== '/login') {
     router.navigate('/login');

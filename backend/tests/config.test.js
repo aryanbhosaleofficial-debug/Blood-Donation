@@ -19,6 +19,8 @@ test('builds config from a valid environment with sensible defaults', () => {
   assert.equal(cfg.appTimezone, 'Asia/Kolkata');
   assert.equal(cfg.requestTtlMinutes, 120);
   assert.equal(cfg.dbBusyTimeoutMs, 5000);
+  assert.equal(cfg.inventoryMaxUnits, 1000);
+  assert.equal(cfg.inventoryStaleMinutes, 30);
   assert.equal(cfg.surge.minimumCount, 5);
   assert.equal(typeof cfg.databasePath, 'string');
   assert.ok(cfg.databasePath.endsWith('app.db'));
@@ -31,12 +33,16 @@ test('honours overrides and coerces types', () => {
     PORT: '8080',
     REQUEST_TTL_MINUTES: '45',
     SURGE_PROBABILITY_THRESHOLD: '0.005',
+    INVENTORY_MAX_UNITS: '2500',
+    INVENTORY_STALE_MINUTES: '45',
   });
   assert.equal(cfg.nodeEnv, 'production');
   assert.equal(cfg.isProduction, true);
   assert.equal(cfg.port, 8080);
   assert.equal(cfg.requestTtlMinutes, 45);
   assert.equal(cfg.surge.probabilityThreshold, 0.005);
+  assert.equal(cfg.inventoryMaxUnits, 2500);
+  assert.equal(cfg.inventoryStaleMinutes, 45);
 });
 
 test('fails with a clear error when SESSION_SECRET is missing', () => {

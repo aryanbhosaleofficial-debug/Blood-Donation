@@ -153,6 +153,9 @@ function buildConfig(env) {
     sessionDatabasePath: resolvePath(ROOT_DIR, string('SESSION_DATABASE_PATH', './data/sessions.db')),
     dbBusyTimeoutMs: integer('DB_BUSY_TIMEOUT_MS', 5000),
 
+    inventoryMaxUnits: integerInRange('INVENTORY_MAX_UNITS', 1000, 1, 1000000),
+    inventoryStaleMinutes: integerInRange('INVENTORY_STALE_MINUTES', 30, 1, 525600),
+
     requestTtlMinutes: integer('REQUEST_TTL_MINUTES', 120),
     locationSessionTtlMinutes: integer('LOCATION_SESSION_TTL_MINUTES', 30),
     availabilityFreshnessDays: integer('AVAILABILITY_FRESHNESS_DAYS', 7),

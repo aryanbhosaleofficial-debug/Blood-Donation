@@ -5,6 +5,7 @@
  *
  * Module 00: config, database, health, static frontend.
  * Module 01: security headers, sessions, CSRF + Origin validation, auth routes.
+ * Module 02: organization profiles, verification, and blood-bank inventory.
  *
  * Middleware order matters:
  *   security headers
@@ -32,6 +33,9 @@ const { notFound } = require('./middleware/not-found');
 const { errorHandler } = require('./middleware/error-handler');
 const healthRoutes = require('./modules/health/health.routes');
 const authRoutes = require('./modules/auth/auth.routes');
+const hospitalRoutes = require('./modules/hospitals/hospitals.routes');
+const bloodBankRoutes = require('./modules/blood-banks/blood-banks.routes');
+const adminRoutes = require('./modules/admin/admin.routes');
 
 const FRONTEND_DIR = path.resolve(__dirname, '..', '..', 'frontend');
 
@@ -103,6 +107,9 @@ function createApp({ mountExtra } = {}) {
   // --- API routes ------------------------------------------------------
   app.use(`${API_PREFIX}/health`, healthRoutes);
   app.use(`${API_PREFIX}/auth`, authRoutes);
+  app.use(`${API_PREFIX}/hospital`, hospitalRoutes);
+  app.use(`${API_PREFIX}/blood-bank`, bloodBankRoutes);
+  app.use(`${API_PREFIX}/admin`, adminRoutes);
 
   // Test-only protected routes (e.g. for CSRF / role assertions). Never mounted
   // in a normal run - the test harness passes this in.

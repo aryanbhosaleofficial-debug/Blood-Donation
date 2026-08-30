@@ -1,0 +1,2 @@
+'use strict'; const {toBoolean}=require('../users/users.serializer');
+function serialize(r){if(!r)return null;return{id:r.id,name:r.name,licenseNo:r.license_no,contactName:r.contact_name,contactPhone:r.contact_phone,address:r.address,city:r.city,locality:r.locality,pinCode:r.pin_code,latitude:r.latitude,longitude:r.longitude,isVerified:toBoolean(r.is_verified),verifiedAt:r.verified_at,verifiedByUserId:r.verified_by_user_id,createdAt:r.created_at,updatedAt:r.updated_at};} module.exports={serialize};

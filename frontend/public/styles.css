@@ -37,10 +37,17 @@ body {
 }
 
 .app-main {
-  max-width: 640px;
+  max-width: 960px;
   margin: 2rem auto;
   padding: 0 1.5rem;
 }
+.role-nav { display:flex; gap:.5rem; padding:.75rem 1.5rem; background:var(--card); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.role-nav a { color:var(--accent); text-decoration:none; }
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.8rem; }
+.form-grid label { display:flex; flex-direction:column; color:var(--muted); }
+.form-grid input { padding:.5rem; border:1px solid var(--border); border-radius:6px; }
+table { width:100%; border-collapse:collapse; background:var(--card); }
+th,td { padding:.6rem; border:1px solid var(--border); text-align:left; }
 
 .card {
   background: var(--card);
@@ -71,7 +78,7 @@ body {
 }
 
 .app-footer {
-  max-width: 640px;
+  max-width: 960px;
   margin: 2rem auto;
   padding: 0 1.5rem;
   color: var(--muted);

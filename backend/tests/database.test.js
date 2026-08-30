@@ -47,7 +47,7 @@ test('the bootstrap schema runs and is idempotent', () => {
   const dbPath = tempDbPath();
   let db = openDatabase({ path: dbPath });
   const version = db.prepare("SELECT value FROM app_meta WHERE key = 'schema_version'").get();
-  assert.equal(version.value, '1');
+  assert.equal(version.value, '2');
   db.close();
 
   // Re-opening the same file must not fail (schema.sql is idempotent).

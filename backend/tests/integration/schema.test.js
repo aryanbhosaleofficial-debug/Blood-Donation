@@ -84,13 +84,24 @@ test('01.01: updated_at trigger bumps on UPDATE', async () => {
   assert.match(after.updated_at, /^20\d\d-/);
 });
 
+test('02: organization and inventory tables expose required constraints', () => {
+  const db = getDb();
+  for (const table of ['hospitals', 'blood_banks', 'inventory', 'inventory_adjustments']) {
+    assert.ok(db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table), table);
+  }
+  const inventorySql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='inventory'").get().sql;
+  assert.match(inventorySql, /component\s*=\s*'RED_CELLS'/i);
+  assert.match(inventorySql, /units_available\)\s*=\s*'integer'/i);
+  assert.match(inventorySql, /UNIQUE\s*\(bank_id,\s*blood_group,\s*component\)/i);
+});
+
 test('N: schema bootstrap is idempotent (re-open the same file)', () => {
   // getDb() already ran the schema once; open a second connection to the same
   // file to prove CREATE ... IF NOT EXISTS + upsert do not error.
   const { openDatabase } = require('../../src/core/database');
   const second = openDatabase({ path: process.env.DATABASE_PATH });
   try {
-    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '1');
+    assert.equal(second.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get().value, '2');
   } finally {
     second.close();
   }
