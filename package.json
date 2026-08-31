@@ -1,21 +1,31 @@
 {
   "name": "community-blood-donation-system",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Community Blood Donation Matching System - a college CEP project for emergency red-cell sourcing coordination.",
   "main": "backend/src/server.js",
   "scripts": {
-    "setup": "node scripts/ensure-env.js && npm install",
+    "setup": "node scripts/ensure-env.js && npm install && npm --prefix frontend install",
     "prestart": "node scripts/ensure-env.js",
     "start": "node backend/src/server.js",
-    "dev": "node --watch backend/src/server.js",
-    "test": "node --test \"backend/tests/**/*.test.js\"",
-    "test:frontend": "npm --prefix frontend test",
+    "dev": "node scripts/dev.js",
+    "dev:backend": "node --watch backend/src/server.js",
     "dev:frontend": "npm --prefix frontend run dev",
+    "test": "node --test \"backend/tests/**/*.test.js\"",
+    "test:backend": "node --test \"backend/tests/**/*.test.js\"",
+    "test:frontend": "npm --prefix frontend test",
     "build:frontend": "npm --prefix frontend run build",
+    "verify": "npm run test:backend && npm run test:frontend && npm run build:frontend && npm run race-test && npm run pledge-race-test",
     "health-check": "node scripts/health-check.js",
     "race-test": "node scripts/race-test.js",
-    "pledge-race-test": "node scripts/pledge-race-test.js"
+    "pledge-race-test": "node scripts/pledge-race-test.js",
+    "race-test:multi": "node scripts/race-test.js --rounds 10 && node scripts/pledge-race-test.js --rounds 10",
+    "demo:seed": "node scripts/ensure-env.js && node scripts/seed-demo.js",
+    "demo:reset": "node scripts/ensure-env.js && node scripts/reset-demo.js --surge",
+    "demo:verify": "node scripts/verify-demo.js",
+    "demo:check": "node scripts/full-demo-check.js",
+    "db:backup": "node scripts/backup-db.js",
+    "db:restore": "node scripts/restore-db.js"
   },
   "engines": {
     "node": ">=20"

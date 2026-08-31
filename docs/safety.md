@@ -474,3 +474,20 @@ Preserve and reinforce:
 - **The detector uses no donor private data.** It does not read donor phone,
   email, internal donor location, live donor coordinates, or patient-sensitive
   request notes. Geographic evidence uses hospital facility coordinates only.
+
+---
+
+# 13. Module 10 — testing, demo & final-readiness safety notes
+
+- The final report and README use **actual command output** for test counts
+  (backend 368, frontend 34), not assumed numbers.
+- No performance/availability/accuracy claims are made — this is a single-process
+  college prototype. See [known-limitations.md](known-limitations.md).
+- Demo data is synthetic and clearly labelled. Demo accounts are `@example.test`
+  with a `DEMO ONLY` password; no real contact information is used anywhere.
+- `demo:reset` / `db:restore` cannot run in production mode.
+- End-to-end tests re-assert the cross-cutting guarantees together: no donor
+  identity or coordinates reach the hospital, exact location is deleted on every
+  close path, audit/notification payloads carry no secrets, CSRF + Origin +
+  ownership are enforced, GET is side-effect free, and surge remains
+  admin-confirmed operational-demand detection — never disaster prediction.

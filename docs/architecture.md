@@ -764,5 +764,7 @@ These are documented system boundaries.
 | Expiry | Cleanup Jobs |
 | Accountability | Audit Service |
 | Demand anomaly | Surge Detection + Admin Review |
+| Verification & demo | Module 10 test suites, race scripts, `demo:seed`/`reset`/`verify`, `db:backup` |
 
-See [workflow.md](workflow.md) for the complete sequence.
+See [workflow.md](workflow.md) for the complete sequence, [testing.md](testing.md)
+for the test matrix, and [final-readiness.md](final-readiness.md) for status.

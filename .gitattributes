@@ -1,0 +1,25 @@
+# Normalise line endings across platforms (project is developed on Windows,
+# hosted on GitHub, and may be checked out on Linux/macOS for the viva).
+* text=auto eol=lf
+
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.mjs  text eol=lf
+*.cjs  text eol=lf
+*.json text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.md   text eol=lf
+*.sql  text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.sh   text eol=lf
+.env.example text eol=lf
+.gitignore   text eol=lf
+.gitattributes text eol=lf
+
+# Binary / generated — never touch
+*.db   binary
+*.png  binary
+*.jpg  binary
+*.ico  binary

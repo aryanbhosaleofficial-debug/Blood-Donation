@@ -393,27 +393,32 @@ community-blood-donation-system/
 │   ├── PRD.md
 │   └── File_and_Folder_Structure.md
 │
-├── scripts/
-│   ├── race-test.js
-│   ├── pledge-race-test.js
-│   ├── health-check.js
-│   ├── backup-demo.js
-│   └── reset-demo.js
+├── scripts/                              # Module 10
+│   ├── ensure-env.js  dev.js  health-check.js
+│   ├── race-test.js  pledge-race-test.js         # 1u+3u / capacity+release, --rounds N
+│   ├── seed-demo.js  reset-demo.js  verify-demo.js  full-demo-check.js
+│   ├── backup-db.js  restore-db.js
+│   └── lib/
+│       ├── demo-accounts.js              # pure catalogue (no native requires)
+│       └── demo-data.js                  # seedDemo() + injectSurgeScenario()
 │
-├── data/
-│   ├── .gitkeep
-│   └── README.md
+├── data/                                 # git-ignored; backend auto-creates
+│   └── backups/                          # git-ignored; VACUUM INTO snapshots
 │
-├── tests/
-│   └── e2e/
-│       ├── hospital-bank-flow.test.js
-│       ├── donor-fallback.test.js
-│       └── surge-demo.test.js
+├── backend/tests/e2e/                    # Module 10
+│   ├── hospital-bank-flow.test.js  donor-fallback-flow.test.js
+│   ├── location-flow.test.js  notification-flow.test.js
+│   ├── expiry-flow.test.js  surge-flow.test.js
+│   └── security-regression.test.js
+│
+├── docs/
+│   ├── testing.md  demo-guide.md  known-limitations.md  final-readiness.md   # Module 10
+│   └── (prd, workflow, architecture, design, modules, repository-structure, development-rules, safety)
 │
 ├── .env.example
+├── .gitattributes                        # Module 10 — LF normalisation
 ├── .gitignore
 ├── package.json
-├── LICENSE
 └── README.md
 ```
 

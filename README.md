@@ -185,32 +185,79 @@ The system identifies **potential donors** only. Final medical suitability remai
 8. Notification outbox
 9. Cleanup, audit, and metrics
 10. Surge detection
-11. Frontend hardening
-12. CEP mock crisis evaluation
+11. Testing, demo hardening & final project readiness
 
-**Implemented so far:** items 1–10 (Modules 0–9). Database `schema_version` 9.
-Background workers: notification, request-expiry, location-cleanup, **surge
-detector** — with startup passes/sweeps. Admin APIs: `GET /api/admin/metrics`,
-`GET /api/admin/audit-logs`, and `GET/POST /api/admin/surge/*` (all ADMIN-only;
-surge mutations are CSRF-protected). Surge detection finds **unusual
-blood-demand patterns** for human ADMIN review — it does **not** predict
-disasters and never auto-confirms. Frontend hardening / CEP demo (item 11+) is
-**not** implemented.
+All eleven planned modules (00–10) are implemented, tested, and demo-ready.
+
+**Status: COMPLETE — Modules 00–10 (`schema_version` 9), v1.0.0.**
+Background workers: notification, request-expiry, location-cleanup, surge
+detector (startup passes/sweeps + recurring). Admin APIs: `GET /api/admin/metrics`,
+`GET /api/admin/audit-logs`, `GET/POST /api/admin/surge/*` (all ADMIN-only; surge
+mutations CSRF-protected). Surge detection finds **unusual blood-demand patterns**
+for human ADMIN review — it does **not** predict disasters and never auto-confirms.
+
+See [docs/final-readiness.md](docs/final-readiness.md), [docs/testing.md](docs/testing.md),
+[docs/demo-guide.md](docs/demo-guide.md), and [docs/known-limitations.md](docs/known-limitations.md).
 
 ---
 
-## Demo Strategy
+## Installation (clean checkout)
 
-The primary viva/demo setup should run locally on one laptop with SQLite.
+```bash
+npm run setup           # copies .env.example -> .env (fresh SESSION_SECRET) + installs backend & frontend deps
+```
 
-Keep these ready:
+Requires Node >= 20. No internet needed after install — the whole demo runs
+locally (SQLite + IN_APP notifications).
 
-- database backup
-- seed script
-- health-check script
-- bank concurrency test
-- donor pledge race test
-- locality/PIN fallback if phone geolocation is unavailable
+## Configuration
+
+Every variable is documented in [.env.example](.env.example) and read only by
+`backend/src/core/config.js`. Defaults are demo-safe; set a real random
+`SESSION_SECRET` for anything shared. `DEMO_PASSWORD` is **DEMO ONLY**.
+
+## Development
+
+```bash
+npm run dev             # backend (:3000) + frontend (:5173), one command
+npm run dev:backend     # backend only (node --watch)
+npm run dev:frontend    # frontend only (vite)
+```
+
+## Testing
+
+```bash
+npm run verify          # backend tests + frontend tests + frontend build + both race tests
+npm run test:backend    # 368 tests (node --test)
+npm run test:frontend   # 34 tests (vitest)
+npm run race-test       # allocation concurrency proof
+npm run pledge-race-test
+npm run race-test:multi # 10 deterministic rounds of each race
+```
+
+## Demo reset & verification
+
+```bash
+npm run demo:reset      # DESTRUCTIVE for the local demo DB only; re-seeds + injects a fresh surge spike
+npm run demo:verify     # non-destructive readiness check -> "STATUS: READY", exit 0
+npm run demo:check      # demo:verify + frontend-build-artefact check
+```
+
+`demo:reset` refuses to run when `NODE_ENV=production`. Full walkthrough in
+[docs/demo-guide.md](docs/demo-guide.md).
+
+## Demo accounts
+
+Deterministic `@example.test` accounts, all using `DEMO_PASSWORD`:
+`admin.demo`, `hospital.demo`, `bank1/2/3.demo`, `donor1..5.demo`.
+Not production credentials.
+
+## Backup
+
+```bash
+npm run db:backup       # WAL-safe VACUUM INTO snapshot -> data/backups/ (git-ignored)
+npm run db:restore --from data/backups/<file>.db --yes   # server must be stopped; refuses in production
+```
 
 ---
 

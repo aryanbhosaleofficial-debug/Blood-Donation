@@ -163,6 +163,13 @@ function buildConfig(env) {
     sessionDatabasePath: resolvePath(ROOT_DIR, string('SESSION_DATABASE_PATH', './data/sessions.db')),
     dbBusyTimeoutMs: integer('DB_BUSY_TIMEOUT_MS', 5000),
 
+    // Module 10 — local demo/viva provisioning only. NOT a production credential.
+    // Used by scripts/seed-demo.js and scripts/reset-demo.js to create the
+    // deterministic demo accounts. Reset scripts refuse to run when
+    // NODE_ENV === 'production'.
+    demoPassword: string('DEMO_PASSWORD', 'demo-Passphrase-2024'),
+    backupDir: resolvePath(ROOT_DIR, string('BACKUP_DIR', './data/backups')),
+
     inventoryMaxUnits: integerInRange('INVENTORY_MAX_UNITS', 1000, 1, 1000000),
     inventoryStaleMinutes: integerInRange('INVENTORY_STALE_MINUTES', 30, 1, 525600),
 

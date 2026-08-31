@@ -726,3 +726,28 @@ Required limitations include:
 - The surge detector job must not overlap ticks (`isRunning` guard) and a
   detector failure must be logged with safe context and must not crash the
   server. Time-bucket dedupe must be deterministic.
+
+## Rule H1 — Testing & demo hardening (Module 10)
+
+- Tests use per-file temporary SQLite databases. Never point an automated
+  test (or a race script) at `data/app.db`.
+- `npm run verify` is the single quality gate: backend tests + frontend
+  tests + frontend build + both race scripts. It must NOT include the
+  destructive demo reset.
+- Race scripts exit `0` on success and non-zero on any invariant failure,
+  with a concise printed summary — no manual interpretation.
+- Demo provisioning is deterministic: `scripts/lib/demo-data.js` is the
+  single source of truth for demo accounts, inventory, and scenario data.
+  Demo accounts use `config.demoPassword` and `@example.test` addresses —
+  never a real person's contact detail, never a production credential.
+- `demo:reset` and `db:restore` refuse to run when `NODE_ENV=production`.
+  There is no override flag for reset.
+- Backups use `VACUUM INTO` (WAL-safe). Never document "copy app.db while the
+  server is running" as a backup method.
+- CLI scripts do their work synchronously and then `process.exit(code)`;
+  they close the database first. (An async `.then()` tail can trip an
+  intermittent `better-sqlite3` teardown assertion on Windows.)
+- Line endings are normalised to LF via `.gitattributes`. Do not commit
+  CRLF churn.
+- No new runtime dependency was added in Module 10. Do not add one to save a
+  few keystrokes; stability beats modernisation in the final module.

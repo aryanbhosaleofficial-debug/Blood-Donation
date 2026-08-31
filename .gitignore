@@ -1,25 +1,29 @@
 # Dependencies
 node_modules/
+frontend/node_modules/
 
-# Environment
+# Environment (never commit real secrets)
 .env
 .env.*
 !.env.example
 
-# SQLite database files
+# SQLite database files + WAL sidecars (demo/dev data is not tracked).
+# The backend auto-creates the data/ directory on first run.
 *.db
 *.db-wal
 *.db-shm
 *.db-journal
 *.sqlite
-data/backups/
+data/
 
 # Test / build output
 coverage/
 dist/
+frontend/dist/
 
 # Editor / OS
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+*.log

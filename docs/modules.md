@@ -995,6 +995,59 @@ Prepare a reliable CEP evaluation independent of network/phone failures.
 9. Simulate notification failure.
 10. Inject synthetic surge and require admin confirmation.
 
+## Implementation status — IMPLEMENTED (v1.0.0)
+
+Module 10 hardened the existing system; it added no new product features.
+
+Scripts (`scripts/`):
+
+- `lib/demo-accounts.js` — pure demo-account catalogue (no native requires).
+- `lib/demo-data.js` — deterministic demo spec + `seedDemo(db)` (idempotent,
+  `bcrypt.hashSync`), `injectSurgeScenario(db)` (fresh Ahmedabad O- spike),
+  `ensureSyntheticBaseline`.
+- `seed-demo.js` (`npm run demo:seed`), `reset-demo.js` (`npm run demo:reset` —
+  wipes all domain tables + re-seeds + `--surge`; **refuses when
+  NODE_ENV=production**), `verify-demo.js` (`npm run demo:verify` — read-only,
+  exit 0/1, "DEMO READINESS CHECK"), `full-demo-check.js` (`npm run demo:check`
+  — verify + frontend-build-artefact).
+- `backup-db.js` (`npm run db:backup` — WAL-safe `VACUUM INTO` →
+  `data/backups/`), `restore-db.js` (`npm run db:restore --from <p> --yes` —
+  refuses in production, requires existing source + explicit confirmation).
+- `dev.js` (`npm run dev` — dependency-free spawn of backend + frontend).
+- `race-test.js` / `pledge-race-test.js` — hardened: 1-unit + 3-unit allocation
+  scenarios, pledge slot-release check, `--rounds N` repetition, concise
+  summary, exit codes.
+
+Tests:
+
+- `backend/tests/e2e/` — `hospital-bank-flow`, `donor-fallback-flow`,
+  `location-flow`, `notification-flow`, `expiry-flow`, `surge-flow`
+  (spike + normal-demand control), `security-regression`. 13 e2e tests over
+  real HTTP.
+- `frontend/tests/resilience.test.jsx` — 401 → unauthorized handler (not on
+  `/auth/me`), network failure → clean `ApiError`, `usePolling` unmount cleanup,
+  empty-state contract.
+- Backend **368** pass, frontend **34** pass, build green, race + multi-race pass.
+
+Config / hygiene:
+
+- `DEMO_PASSWORD`, `BACKUP_DIR` added to `config.js` + `.env.example` (DEMO ONLY
+  labelled).
+- New root scripts: `dev`, `dev:backend`, `dev:frontend`, `test:backend`,
+  `verify`, `race-test:multi`, `demo:seed|reset|verify|check`, `db:backup|restore`.
+- `.gitattributes` added (LF normalisation). `.gitignore` extended
+  (`frontend/node_modules/`, `frontend/dist/`, `data/`, `*.log`).
+- Audits (no code changes required): no `dangerouslySetInnerHTML`/`innerHTML` in
+  the frontend; no string-interpolated SQL with user input (dynamic `UPDATE`
+  columns come from hardcoded whitelists, values are bound); no tracked secrets;
+  no unsafe "disaster"/"eligible donor"/"blood ready" wording; logger redacts
+  sensitive keys recursively.
+
+Docs: `docs/testing.md`, `docs/demo-guide.md`, `docs/known-limitations.md`,
+`docs/final-readiness.md` created; `README.md`, `docs/modules.md` updated.
+
+**All eleven planned modules (00–10) are complete. There is no Module 11.**
+
 ---
 
 # Workflow Integration by Module

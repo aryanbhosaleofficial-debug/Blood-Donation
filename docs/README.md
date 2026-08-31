@@ -19,6 +19,13 @@ This directory contains the formal product, architecture, engineering, safety, w
 - [Development Rules](development-rules.md)
 - [Safety and Risk Controls](safety.md)
 
+## Testing & Demo (Module 10)
+
+- [Testing](testing.md) — every suite and what it proves
+- [Demo Guide](demo-guide.md) — pre-viva reset, scenarios A–G, fallbacks, viva Q&A
+- [Known Limitations](known-limitations.md)
+- [Final Readiness](final-readiness.md) — status of Modules 00–10
+
 ## Recommended Reading Order
 
 ```text
@@ -37,6 +44,8 @@ Repository Structure
 Development Rules
  ↓
 Safety
+ ↓
+Testing → Demo Guide → Known Limitations → Final Readiness
 ```
 
 ## Scope Reminder

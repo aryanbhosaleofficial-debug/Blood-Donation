@@ -955,3 +955,16 @@ Keep:
 - health-check script.
 
 The viva must not depend only on cloud availability or five volunteer phones.
+
+---
+
+# Module 10 — verified end to end
+
+The full workflow above is exercised together by `backend/tests/e2e/`
+(hospital→bank coverage, bank-shortage→donor-fallback→pledge→arrival,
+location-share→ETA-band→stop→delete, notification outbox→worker→read,
+request-expiry cleanup-once, and synthetic-surge→admin-confirm) plus the
+`scripts/race-test.js` / `scripts/pledge-race-test.js` concurrency proofs.
+
+Deterministic demo provisioning: `npm run demo:reset` → `npm run demo:verify`
+("STATUS: READY") → `npm run dev`. See [demo-guide.md](demo-guide.md).
