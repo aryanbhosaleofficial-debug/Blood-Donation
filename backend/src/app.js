@@ -146,8 +146,26 @@ function createApp({ mountExtra } = {}) {
   app.use(`${API_PREFIX}`, notFound);
 
   // --- Static frontend ----------------------------------------------
-  app.use(express.static(FRONTEND_DIR));
-  app.use('/src', express.static(path.join(FRONTEND_DIR, 'src')));
+  // Prefer the production build (`npm run build:frontend`) when present, so a
+  // single `npm start` serves the whole app from one origin. Otherwise fall
+  // back to the raw source tree (used with the Vite dev server).
+  const DIST_DIR = path.join(FRONTEND_DIR, 'dist');
+  const usingBuild = fs.existsSync(path.join(DIST_DIR, 'index.html'));
+  const STATIC_DIR = usingBuild ? DIST_DIR : FRONTEND_DIR;
+
+  app.use(express.static(STATIC_DIR));
+  if (!usingBuild) {
+    app.use('/src', express.static(path.join(FRONTEND_DIR, 'src')));
+  }
+
+  // SPA fallback: a non-API GET that did not match a static file returns
+  // index.html so client-side routes (/admin, /hospital, …) work on refresh.
+  if (usingBuild) {
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith(API_PREFIX)) return next();
+      res.sendFile(path.join(DIST_DIR, 'index.html'));
+    });
+  }
 
   // Everything else -> JSON 404.
   app.use(notFound);

@@ -3,7 +3,10 @@
 **OLD stack:** React + Vite · Node + Express · SQLite + better-sqlite3
 **NEW stack:** React + Vite · Node + Express · Supabase PostgreSQL (`@supabase/supabase-js`) · Google Gemini API (backend only)
 
-**Overall status: INCOMPLETE — repository-side work done and verified against real PostgreSQL; the live cutover is PENDING a Supabase project.**
+**Overall status: INCOMPLETE — repository-side work done; schema + transactional
+functions + RLS are live and verified on the actual Supabase project; the
+application cutover (repositories / workers / test harness to `supabase-js`) is
+PENDING.**
 
 This repository does not currently have Supabase credentials, a Supabase project,
 a Docker daemon, or a local `psql`/`supabase` CLI. Per the migration brief, all
@@ -46,13 +49,22 @@ npm run test:frontend  # 37 frontend tests
 
 ---
 
-## PENDING (requires a Supabase project + `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`)
+## DONE — live Supabase project (2026-09-01)
 
-1. **Create the Supabase project** and apply `supabase/migrations/0001..0003.sql`
-   (via `supabase db push` or the SQL editor — the SQL is authored to be
-   reproducible, not dashboard-only).
-2. **Run `npm run migrate:supabase -- --confirm`** to copy existing SQLite data
-   (only if the local DB holds data worth keeping).
+- Project `ninhoddowfweenhnkhbb` (ap-northeast-1, PostgreSQL 17.6). `.env` holds
+  `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (`sb_secret_…`), `SUPABASE_DB_URL`
+  (session pooler). `DB_PROVIDER` still `sqlite`.
+- `0001_schema.sql` + `0002_functions.sql` + `0003_grants.sql` applied →
+  **19 public tables, 19 `bd_*` functions, RLS on all 19 tables**.
+- End-to-end checks against the real project: `app_meta` read via PostgREST OK
+  (`schema_version=10-pg`); `bd_claim_due_notifications` RPC via PostgREST →
+  PL/pgSQL OK; anonymous read of `public.users` → **401 permission denied**
+  (RLS + revoked grants confirmed).
+
+## PENDING (application cutover)
+
+1. **Run `npm run migrate:supabase -- --confirm`** to copy existing SQLite data
+   (only if the local DB holds data worth keeping — otherwise re-seed).
 3. **Port the repositories to `supabase-js`** — convert
    `backend/src/modules/**/**.repository.js` reads to `supabase.from(...).select(<explicit columns>)`
    and the transaction files (`*.transaction.js`) to single `supabase.rpc('bd_*', …)`
@@ -66,9 +78,10 @@ npm run test:frontend  # 37 frontend tests
 6. **Convert the test harness** — `backend/tests/helpers/*` provisions a temp
    SQLite file; add a Supabase/`pg` path (or keep SQLite as the test adapter and
    add a separate Supabase integration lane).
-7. **Live Supabase + PostgREST verification** — re-run the race/pledge/expiry
-   checks through the actual `supabase-js` HTTP transport (the SQL is proven;
-   the HTTP round-trip is not yet exercised here).
+7. **Full race verification through `supabase-js` HTTP transport** — the SQL is
+   proven (`verify:pg`, 32/32) and the PostgREST → RPC round-trip is confirmed
+   working on the live project; re-running the concurrent allocation/pledge
+   races through `supabase.rpc()` is the remaining check.
 8. **Optional live Gemini smoke** — set `RUN_GEMINI_LIVE_TEST=true` with a real
    key to exercise `backend/src/integrations/gemini/gemini.client.js` end to end.
 9. **Remove SQLite** — only after 3–7 are proven: delete `better-sqlite3`,

@@ -29,4 +29,13 @@ process.env.LOGIN_LOCK_MINUTES = '15';
 process.env.LOGIN_RATE_LIMIT_MAX = process.env.LOGIN_RATE_LIMIT_MAX || '10000';
 process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'silent';
 
+// Keep tests independent of whatever the developer has in their real .env
+// (Supabase / Gemini credentials must never influence the test runtime).
+process.env.DB_PROVIDER = 'sqlite';
+process.env.SUPABASE_URL = '';
+process.env.SUPABASE_SERVICE_ROLE_KEY = '';
+process.env.SUPABASE_DB_URL = '';
+process.env.GEMINI_ENABLED = 'false';
+process.env.GEMINI_API_KEY = '';
+
 module.exports = { testDir: dir, appOrigin: process.env.APP_ORIGIN };

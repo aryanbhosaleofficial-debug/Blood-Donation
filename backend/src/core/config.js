@@ -193,8 +193,8 @@ function buildConfig(env) {
     gemini: {
       enabled: boolean('GEMINI_ENABLED', false),
       apiKey: string('GEMINI_API_KEY', ''),
-      model: string('GEMINI_MODEL', 'gemini-2.5-flash'),
-      timeoutMs: integerInRange('GEMINI_TIMEOUT_MS', 15000, 1000, 120000),
+      model: string('GEMINI_MODEL', 'gemini-flash-lite-latest'),
+      timeoutMs: integerInRange('GEMINI_TIMEOUT_MS', 20000, 1000, 120000),
       maxOutputTokens: integerInRange('GEMINI_MAX_OUTPUT_TOKENS', 512, 1, 8192),
       runLiveTest: boolean('RUN_GEMINI_LIVE_TEST', false),
     },

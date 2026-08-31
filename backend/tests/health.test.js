@@ -10,6 +10,10 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cbdms-health-'));
 process.env.SESSION_SECRET = 'test-secret-0123456789abcdef';
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_PATH = path.join(tmpDir, 'app.db');
+// Independent of the developer's real .env (Supabase / Gemini values).
+process.env.DB_PROVIDER = 'sqlite';
+process.env.GEMINI_ENABLED = 'false';
+process.env.GEMINI_API_KEY = '';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');

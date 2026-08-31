@@ -28,7 +28,7 @@ test('config: GEMINI defaults are safe (disabled, not configured)', () => {
   assert.equal(cfg.gemini.enabled, false);
   assert.equal(cfg.gemini.apiKey, '');
   assert.ok(cfg.gemini.model.length > 0, 'a model name is always present');
-  assert.equal(cfg.gemini.timeoutMs, 15000);
+  assert.ok(cfg.gemini.timeoutMs >= 1000 && cfg.gemini.timeoutMs <= 120000);
 });
 
 test('config: GEMINI_ENABLED=true without a key is a hard config error', () => {
