@@ -14,12 +14,26 @@ community-blood-donation-system/
 ├── frontend/
 ├── docs/
 ├── scripts/
+├── supabase/            # PostgreSQL migrations + real-DB verification harness
+│   ├── migrations/      # 0001_schema.sql · 0002_functions.sql · 0003_grants.sql
+│   └── verify/          # pg-verify.js — boots real PostgreSQL 18, runs the races
 ├── data/
 ├── tests/
 ├── .env.example
 ├── .gitignore
 ├── package.json
 └── README.md
+```
+
+Migration-related backend additions:
+
+```text
+backend/src/core/supabase.js            # single service-role Supabase client (lazy)
+backend/src/core/supabase-errors.js     # PostgREST/PG error -> domain error code
+backend/src/security/pg-session-store.js # express-session store on the sessions table
+backend/src/integrations/gemini/         # backend-only Gemini foundation (disabled by default)
+scripts/migrate-sqlite-to-supabase.js    # guarded one-time data copy (dry-run without --confirm)
+docs/MIGRATION-STATUS.md                 # what is done vs pending
 ```
 
 The backend and frontend remain clearly separated while sharing one repository for easy college submission and demonstration.

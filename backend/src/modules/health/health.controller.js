@@ -3,6 +3,7 @@
 const { pingDatabase, getSchemaVersion } = require('../../core/database');
 const { sendSuccess } = require('../../core/response');
 const { ServiceUnavailableError } = require('../../core/errors');
+const config = require('../../core/config');
 
 const startedAt = Date.now();
 
@@ -20,7 +21,13 @@ function getHealth(req, res, next) {
     sendSuccess(res, {
       status: 'ok',
       db: 'ok',
+      // Which database backend is active. No URL, key, or connection string.
+      databaseProvider:
+        config.database.provider === 'supabase' ? 'supabase-postgresql' : 'sqlite',
       schemaVersion: getSchemaVersion(),
+      // Gemini posture only — never triggers a live Gemini call.
+      geminiConfigured: Boolean(config.gemini.apiKey),
+      geminiEnabled: config.gemini.enabled === true,
       uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
       timestamp: new Date().toISOString(),
     });

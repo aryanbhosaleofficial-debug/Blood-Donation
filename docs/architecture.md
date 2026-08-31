@@ -309,15 +309,59 @@ Examples:
 
 With `better-sqlite3`, these transactions are invoked with `.immediate()`.
 
-### Production Migration
+### Target: Supabase PostgreSQL (migration in progress)
 
-For multi-instance deployment or higher concurrency:
+The official target database is **Supabase PostgreSQL**, reached from the backend
+only through `@supabase/supabase-js` (service-role key). `DB_PROVIDER` selects the
+backend; it defaults to `sqlite`. Status and the cutover checklist:
+[MIGRATION-STATUS.md](MIGRATION-STATUS.md).
 
-```text
-SQLite -> PostgreSQL
-```
+Type mapping used by `supabase/migrations/0001_schema.sql`:
 
-The service/repository separation is intended to make this migration easier.
+| SQLite | PostgreSQL |
+|---|---|
+| `INTEGER PRIMARY KEY AUTOINCREMENT` | `BIGINT GENERATED ALWAYS AS IDENTITY` |
+| TEXT ISO timestamp + `strftime` trigger | `TIMESTAMPTZ` + shared `set_updated_at()` trigger |
+| `INTEGER CHECK (x IN (0,1))` | `BOOLEAN` |
+| `payload_json` / `metadata_json` TEXT | `JSONB` |
+| `REAL` | `DOUBLE PRECISION` |
+
+All FK / UNIQUE / CHECK / NOT NULL constraints and every index (including the
+partial notification indexes) are preserved.
+
+**Concurrency after migration.** `BEGIN IMMEDIATE` / `.immediate()` / WAL /
+`busy_timeout` / `PRAGMA` are replaced by real PostgreSQL transaction semantics.
+Each critical read → decision → write operation is a single PL/pgSQL function
+(`supabase/migrations/0002_functions.sql`, `bd_*`) invoked with one
+`supabase.rpc(...)` call — that call is the transaction boundary. Hot rows are
+locked with `SELECT … FOR UPDATE`; the notification-queue claim uses
+`FOR UPDATE SKIP LOCKED` with a visibility lease. Domain outcomes are raised as
+`RAISE EXCEPTION … MESSAGE = '<CODE>'` and mapped back to the existing API error
+codes in `backend/src/core/supabase-errors.js`. These functions are verified
+against a real PostgreSQL 18 server by `npm run verify:pg` (allocation race,
+pledge race, inventory version conflict, expiry idempotency, `SKIP LOCKED`
+disjointness, notification-rollback).
+
+**Sessions** move to a PostgreSQL-backed `express-session` store
+(`backend/src/security/pg-session-store.js`, `sessions` table) — auth itself is
+**not** migrated to Supabase Auth.
+
+**RLS** is enabled on every table as defence in depth with no permissive `anon`
+policies; Express authorization remains authoritative (the service-role key
+bypasses RLS by design).
+
+The service/repository separation is what makes this migration a wiring change
+rather than a rewrite.
+
+### AI integration (Google Gemini, backend only)
+
+`backend/src/integrations/gemini/` is a self-contained, disabled-by-default
+integration. The only approved feature is an ADMIN-only plain-language summary of
+already-aggregated, de-identified operational metrics. Gemini output is advisory:
+it is never an authorization layer and never makes a medical, compatibility,
+allocation, or surge-confirmation decision. Input is allow-listed and re-checked;
+no call runs inside a database transaction. See
+[safety.md](safety.md) §14 and [development-rules.md](development-rules.md).
 
 ---
 

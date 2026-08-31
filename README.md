@@ -27,16 +27,28 @@ The system allows verified hospitals to post urgent red-cell requests, checks pa
 
 ## Technology Stack
 
+> **Migration in progress.** The official target stack is React + Vite → Express →
+> **Supabase PostgreSQL** (`@supabase/supabase-js`) + **Google Gemini API**
+> (backend only). The repository-side migration (PostgreSQL schema, transactional
+> `rpc()` functions, grants/RLS, Supabase client, PostgreSQL session store, Gemini
+> integration) is done and verified against a real PostgreSQL 18 server. The live
+> cutover is pending a Supabase project — `DB_PROVIDER` defaults to `sqlite` and
+> that runtime is fully tested. See **[docs/MIGRATION-STATUS.md](docs/MIGRATION-STATUS.md)**.
+
 ### Backend
 - Node.js
 - Express
-- SQLite
-- `better-sqlite3`
-- `express-session`
+- **Supabase PostgreSQL** via `@supabase/supabase-js` (target) · SQLite + `better-sqlite3` (current default, `DB_PROVIDER=sqlite`)
+- **Google Gemini API** via `@google/genai` — backend only, disabled by default, advisory output only
+- `express-session` (SQLite store now; PostgreSQL-backed `sessions` table after cutover)
 - bcrypt
 - Zod
 - Helmet
 - Express Rate Limit
+
+`GEMINI_API_KEY` is a Google provider credential used only by the Express server —
+it is **not** this application's API, is never sent to the browser, and never
+appears in a `VITE_` variable.
 
 ### Frontend
 - React 18
@@ -207,8 +219,11 @@ See [docs/final-readiness.md](docs/final-readiness.md), [docs/testing.md](docs/t
 npm run setup           # copies .env.example -> .env (fresh SESSION_SECRET) + installs backend & frontend deps
 ```
 
-Requires Node >= 20. No internet needed after install — the whole demo runs
-locally (SQLite + IN_APP notifications).
+Requires Node >= 20. With the default `DB_PROVIDER=sqlite` the whole demo runs
+locally (SQLite + IN_APP notifications) with no internet after install. With
+`DB_PROVIDER=supabase` the database is remote and network access is required;
+with `GEMINI_ENABLED=true` the Gemini API is reached over the network too.
+Gemini-independent features degrade safely when Gemini is unavailable.
 
 ## Configuration
 

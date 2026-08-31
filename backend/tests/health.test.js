@@ -39,7 +39,14 @@ test('GET /api/health returns 200 with status ok and a live db', async () => {
     assert.equal(body.data.status, 'ok');
     assert.equal(body.data.db, 'ok');
     assert.equal(body.data.schemaVersion, '9');
+    assert.equal(body.data.databaseProvider, 'sqlite');
+    assert.equal(body.data.geminiConfigured, false);
+    assert.equal(body.data.geminiEnabled, false);
     assert.ok(body.data.timestamp);
+
+    // No secret material must appear anywhere in the health payload.
+    const raw = JSON.stringify(body);
+    assert.ok(!/SERVICE_ROLE|service_role|supabase\.co|AIza|GEMINI_API_KEY/i.test(raw));
   });
 });
 

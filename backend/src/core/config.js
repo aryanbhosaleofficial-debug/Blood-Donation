@@ -163,6 +163,42 @@ function buildConfig(env) {
     sessionDatabasePath: resolvePath(ROOT_DIR, string('SESSION_DATABASE_PATH', './data/sessions.db')),
     dbBusyTimeoutMs: integer('DB_BUSY_TIMEOUT_MS', 5000),
 
+    // --- Database provider -------------------------------------------------
+    // 'sqlite'  — better-sqlite3 (the current, fully-tested runtime).
+    // 'supabase' — Supabase PostgreSQL via @supabase/supabase-js (migration
+    //             target; requires SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY).
+    // The service-role key is BACKEND ONLY. It bypasses RLS, so Express
+    // authorization (sessions, roles, ownership) stays authoritative.
+    database: {
+      provider: oneOf('DB_PROVIDER', 'sqlite', ['sqlite', 'supabase']),
+      supabaseUrl: string('SUPABASE_URL', ''),
+      supabaseServiceRoleKey: string('SUPABASE_SERVICE_ROLE_KEY', ''),
+      // Optional direct PostgreSQL connection string (session store / migration
+      // verification). Never required when the supabase-js client is used.
+      supabaseDbUrl: string('SUPABASE_DB_URL', ''),
+      projectEnv: oneOf('SUPABASE_PROJECT_ENV', 'development', ['development', 'staging', 'production']),
+    },
+
+    // Local demo/viva guard. Destructive Supabase demo scripts refuse to run
+    // unless this is true AND the project env is not 'production'.
+    demoMode: boolean('DEMO_MODE', false),
+
+    // --- Google Gemini API (backend only) --------------------------------
+    // GEMINI_API_KEY is a provider credential for Google's Generative
+    // Language API — it is NOT this application's API. Never exposed to the
+    // browser, never sent to Supabase, never logged. The core system runs
+    // fully with Gemini disabled; Gemini output is advisory and never an
+    // authorization, medical-eligibility, compatibility, allocation, or
+    // surge-confirmation decision.
+    gemini: {
+      enabled: boolean('GEMINI_ENABLED', false),
+      apiKey: string('GEMINI_API_KEY', ''),
+      model: string('GEMINI_MODEL', 'gemini-2.5-flash'),
+      timeoutMs: integerInRange('GEMINI_TIMEOUT_MS', 15000, 1000, 120000),
+      maxOutputTokens: integerInRange('GEMINI_MAX_OUTPUT_TOKENS', 512, 1, 8192),
+      runLiveTest: boolean('RUN_GEMINI_LIVE_TEST', false),
+    },
+
     // Module 10 — local demo/viva provisioning only. NOT a production credential.
     // Used by scripts/seed-demo.js and scripts/reset-demo.js to create the
     // deterministic demo accounts. Reset scripts refuse to run when
@@ -216,6 +252,14 @@ function buildConfig(env) {
     },
   };
 
+  if (config.database.provider === 'supabase') {
+    if (isBlank(config.database.supabaseUrl)) errors.push('DB_PROVIDER=supabase requires SUPABASE_URL');
+    if (isBlank(config.database.supabaseServiceRoleKey)) errors.push('DB_PROVIDER=supabase requires SUPABASE_SERVICE_ROLE_KEY');
+  }
+  if (config.gemini.enabled && isBlank(config.gemini.apiKey)) {
+    errors.push('GEMINI_ENABLED=true requires GEMINI_API_KEY');
+  }
+
   if (errors.length > 0) {
     throw new Error(
       `Invalid application configuration:\n  - ${errors.join('\n  - ')}\n\n` +
@@ -225,6 +269,8 @@ function buildConfig(env) {
 
   Object.freeze(config.surge);
   Object.freeze(config.login);
+  Object.freeze(config.database);
+  Object.freeze(config.gemini);
   return config;
 }
 

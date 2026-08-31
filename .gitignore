@@ -21,6 +21,11 @@ coverage/
 dist/
 frontend/dist/
 
+# Supabase / PostgreSQL migration-verification scratch
+supabase/verify/pgdata/
+supabase/.temp/
+*.pgdata/
+
 # Editor / OS
 .DS_Store
 Thumbs.db

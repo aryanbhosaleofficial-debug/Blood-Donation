@@ -5,6 +5,21 @@ stated openly for the viva and the project report.
 
 ## Platform / scale
 
+- **Stack migration is mid-flight.** The official target is Supabase PostgreSQL +
+  a backend-only Google Gemini integration. The PostgreSQL schema, transactional
+  `rpc()` functions, grants/RLS, Supabase client, PostgreSQL session store, and
+  Gemini foundation exist and are verified against a real PostgreSQL 18 server
+  (`npm run verify:pg`), but the runtime still defaults to `DB_PROVIDER=sqlite`
+  until a Supabase project is available for the cutover. See
+  [MIGRATION-STATUS.md](MIGRATION-STATUS.md).
+- **"Fully offline" applies only to `DB_PROVIDER=sqlite` + the IN_APP channel.**
+  Cloud Supabase and the Gemini API both require network access. Gemini-independent
+  features still work when Gemini is unavailable, but a remote Supabase database
+  is required unless a local Supabase/PostgreSQL is used.
+- **Backups: SQLite uses file snapshots** (`VACUUM INTO`); on Supabase this is
+  replaced by Supabase point-in-time recovery or `pg_dump` against
+  `SUPABASE_DB_URL`. `VACUUM INTO` / "copy `app.db`" is not the strategy once on
+  PostgreSQL.
 - **SQLite targets a single Node process.** WAL + `busy_timeout` handle
   local concurrency, but there is no distributed lock. A production multi-instance
   deployment would need PostgreSQL and a real job/lease coordinator; the

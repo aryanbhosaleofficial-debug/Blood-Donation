@@ -751,3 +751,55 @@ Required limitations include:
   CRLF churn.
 - No new runtime dependency was added in Module 10. Do not add one to save a
   few keystrokes; stability beats modernisation in the final module.
+
+---
+
+# Migration — Supabase PostgreSQL + Google Gemini
+
+See [MIGRATION-STATUS.md](MIGRATION-STATUS.md) for what is done vs pending.
+
+## Database
+- The React frontend NEVER talks to Supabase directly. It calls Express REST
+  APIs only. There is no `@supabase/supabase-js` in the frontend package and no
+  `VITE_SUPABASE_*` variable.
+- The frontend NEVER receives the Supabase service-role key or any Gemini
+  credential — not in source, env, HTML, localStorage/sessionStorage, an API
+  response, or a log line.
+- All Supabase access goes through the single client in
+  `backend/src/core/supabase.js` (service role, lazy, memoized). No scattered
+  `createClient()`.
+- Do NOT fake a transaction with several `supabase-js` calls. Every critical
+  multi-step operation is one PL/pgSQL function invoked with a single
+  `supabase.rpc('bd_*', …)` — that is the transaction boundary.
+- Race-sensitive rows are locked with `SELECT … FOR UPDATE`; the notification
+  queue claim uses `FOR UPDATE SKIP LOCKED` with a visibility lease.
+- Supabase/PostgREST errors are mapped to domain error codes in
+  `backend/src/core/supabase-errors.js`. Never surface raw PostgREST payloads,
+  SQL, constraint names, or schema internals to a client.
+- Domain reads select explicit columns, never `.select('*')`.
+- Dependency direction is unchanged: routes → controllers → services →
+  repositories → Supabase client / RPC.
+- Auth is NOT migrated to Supabase Auth. Server-side sessions, bcrypt hashes in
+  the backend `users` table, roles, lockout, CSRF, and Origin checks stay.
+- RLS is enabled on every table as defence in depth (no permissive `anon`
+  policies), but Express authorization remains authoritative — the service-role
+  key bypasses RLS by design.
+
+## Gemini
+- Gemini is backend only, disabled by default (`GEMINI_ENABLED=false`), and the
+  model always comes from `GEMINI_MODEL` config — never hard-coded.
+- Gemini output is advisory. It is NEVER an authorization layer and never
+  determines medical eligibility, blood compatibility, allocation/coverage, or
+  surge confirmation, and never overrides the Poisson p-value rules.
+- No Gemini call happens inside a database transaction.
+- Gemini input is built from an allow-list and re-checked by
+  `gemini.sanitizer.assertNoForbiddenKeys()`. It never receives passwords,
+  hashes, sessions, cookies, CSRF tokens, donor phone/email, live coordinates,
+  patient identifiers, or free-text notes.
+- A Gemini failure (disabled / timeout / 429 / network / bad response) is
+  non-fatal — callers get `{ available: false, reason }` and continue.
+- Safe logs only: operation name, model, duration, success/failure, correlation
+  id, token counts. Never the key, the Authorization header, the full prompt, or
+  the raw output.
+- Tests use `gemini.mock.js`. The live smoke test is opt-in via
+  `RUN_GEMINI_LIVE_TEST=true` and skipped by default.

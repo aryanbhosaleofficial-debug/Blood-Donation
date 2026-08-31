@@ -491,3 +491,26 @@ Preserve and reinforce:
   close path, audit/notification payloads carry no secrets, CSRF + Origin +
   ownership are enforced, GET is side-effect free, and surge remains
   admin-confirmed operational-demand detection — never disaster prediction.
+
+---
+
+# 14. AI safety boundary (Google Gemini)
+
+Gemini is an **advisory** component. It is disabled by default and the system is
+fully functional without it.
+
+- Gemini output is **non-authoritative**. It does not determine medical
+  eligibility, does not override blood-compatibility rules, does not make
+  allocation or coverage decisions, does not auto-confirm surge events, and does
+  not override the Poisson p-value thresholds. A human ADMIN still confirms every
+  surge; clinicians still determine every medical outcome.
+- Gemini is never an authorization layer. Express sessions, roles, and ownership
+  checks decide access — a model response can never grant or deny it.
+- Gemini **never receives**: passwords or hashes, session ids, cookies, CSRF
+  tokens, donor phone or email, donor live latitude/longitude, patient-identifying
+  information, or free-text request/admin/review notes. The only approved feature
+  summarizes already-aggregated, de-identified operational counts, and its input
+  is filtered by an allow-list and re-checked before the call.
+- No Gemini call runs inside a database transaction (latency must not hold locks).
+- `GEMINI_API_KEY` is a Google provider credential held only on the Express
+  server. It is never exposed to the browser, never logged, and never committed.
