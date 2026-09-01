@@ -140,20 +140,25 @@ cd frontend && npm install && cd ..  # installs frontend React dependencies
 
 **Backend Server (Express API on `http://localhost:3000`):**
 ```bash
-npm start              # starts Express backend server
-# or for watch mode:
-npm run dev
+npm start              # production/demo: Express API + built React app, one origin
 ```
 
-**Frontend Dev Server (React + Vite on `http://localhost:5173`):**
+**Development servers:**
 ```bash
-npm run dev:frontend   # starts Vite dev server with /api proxy to backend
+npm run dev            # backend :3000 + Vite :5173; Vite proxies relative /api calls
 ```
+
+Exact Origin validation accepts `APP_ORIGIN=http://localhost:3000` for the
+production/demo app and `FRONTEND_ORIGIN=http://localhost:5173` for Vite
+development. No wildcard localhost origins are allowed.
+
+`frontend/src/api/` contains browser-side HTTP client wrappers. The actual REST
+API remains the Express implementation in `backend/src/modules/`.
 
 ### 3. Testing & Verification
 
 ```bash
-npm test               # runs backend Node.js test suite (225 tests)
+npm test               # runs the backend Node.js test suite
 npm run test:frontend  # runs frontend Vitest suite (React testing library)
 npm run build:frontend # builds frontend production bundle to frontend/dist
 npm run race-test      # allocation concurrency test

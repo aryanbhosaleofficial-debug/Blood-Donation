@@ -2,8 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { auditApi } from '../../api/audit.api.js';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner.jsx';
 import { ErrorAlert } from '../../components/common/ErrorAlert.jsx';
+import { PageHeader } from '../../components/common/PageHeader.jsx';
+import { InfoBanner } from '../../components/common/InfoBanner.jsx';
+import { Button } from '../../components/common/Button.jsx';
 import { AuditLogTable } from '../../components/admin/AuditLogTable.jsx';
 import { AuditFilterForm } from '../../components/admin/AuditFilterForm.jsx';
+import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 
@@ -56,15 +60,19 @@ export function AuditLogsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h2>Audit Logs</h2>
-        <button type="button" className="btn btn-secondary" onClick={load}>Refresh</button>
-      </div>
+      <PageHeader
+        title="System Audit Logs"
+        description="Immutable, append-only chronological log of all security, inventory, and lifecycle coordination events."
+        actions={
+          <Button variant="secondary" onClick={load} icon={<RefreshCw size={14} />}>
+            Refresh
+          </Button>
+        }
+      />
 
-      <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
-        Append-only record of accountable domain events. Secrets, donor contact details, and exact
-        coordinates are never stored here.
-      </p>
+      <InfoBanner variant="info">
+        <strong>Append-Only Integrity:</strong> System events are immutable and cannot be edited or purged. Passwords, donor private contacts, and raw GPS coordinates are strictly scrubbed before persistence.
+      </InfoBanner>
 
       <AuditFilterForm onApply={applyFilters} disabled={loading} />
 
@@ -73,32 +81,37 @@ export function AuditLogsPage() {
       {loading ? (
         <LoadingSpinner message="Loading audit events…" />
       ) : (
-        <>
+        <div style={{ marginTop: 'var(--space-4)' }}>
           <AuditLogTable rows={rows} />
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '1rem' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={offset === 0}
-              onClick={() => setOffset(Math.max(offset - PAGE_SIZE, 0))}
-            >
-              Previous
-            </button>
-            <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--space-4)', flexWrap: 'wrap' }}>
+            <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
               {pagination.total === 0
-                ? 'No events'
-                : `Showing ${offset + 1}–${offset + rows.length} of ${pagination.total}`}
+                ? 'No events matching filters'
+                : `Showing ${offset + 1}–${offset + rows.length} of ${pagination.total} events`}
             </span>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={!pagination.hasMore}
-              onClick={() => setOffset(offset + PAGE_SIZE)}
-            >
-              Next
-            </button>
+
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={offset === 0}
+                onClick={() => setOffset(Math.max(offset - PAGE_SIZE, 0))}
+                icon={<ChevronLeft size={14} />}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!pagination.hasMore}
+                onClick={() => setOffset(offset + PAGE_SIZE)}
+                icon={<ChevronRight size={14} />}
+              >
+                Next
+              </Button>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

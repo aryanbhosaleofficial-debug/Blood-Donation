@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { Button } from '../common/Button.jsx';
+import { Filter, RotateCcw } from 'lucide-react';
 
-// Mirrors backend audit.constants (kept explicit to avoid a shared bundle).
+// Mirrors backend audit.constants
 export const AUDIT_ACTIONS = [
   'AUTH_LOGIN_SUCCEEDED', 'AUTH_LOGIN_FAILED', 'AUTH_ACCOUNT_LOCKED', 'AUTH_LOGOUT',
   'ORGANIZATION_PROFILE_CREATED', 'ORGANIZATION_PROFILE_UPDATED', 'ORGANIZATION_VERIFIED',
@@ -38,39 +40,53 @@ export function AuditFilterForm({ onApply, disabled }) {
   };
 
   return (
-    <form className="card audit-filter-form" onSubmit={submit} style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end' }}>
-      <label>
-        Action
-        <select value={values.action} onChange={set('action')} disabled={disabled}>
-          <option value="">Any</option>
-          {AUDIT_ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </label>
-      <label>
-        Entity type
-        <select value={values.entityType} onChange={set('entityType')} disabled={disabled}>
-          <option value="">Any</option>
-          {AUDIT_ENTITIES.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </label>
-      <label>
-        Entity ID
-        <input type="number" min="1" value={values.entityId} onChange={set('entityId')} disabled={disabled} />
-      </label>
-      <label>
-        Actor user ID
-        <input type="number" min="1" value={values.actorUserId} onChange={set('actorUserId')} disabled={disabled} />
-      </label>
-      <label>
-        From (UTC)
-        <input type="datetime-local" value={values.from} onChange={set('from')} disabled={disabled} />
-      </label>
-      <label>
-        To (UTC)
-        <input type="datetime-local" value={values.to} onChange={set('to')} disabled={disabled} />
-      </label>
-      <button type="submit" className="btn btn-primary" disabled={disabled}>Apply</button>
-      <button type="button" className="btn btn-secondary" onClick={reset} disabled={disabled}>Reset</button>
+    <form className="card audit-filter-form" onSubmit={submit} style={{ padding: 'var(--space-5)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)', alignItems: 'flex-end' }}>
+        <div className="form-group">
+          <label htmlFor="audit-filter-action">Action</label>
+          <select id="audit-filter-action" value={values.action} onChange={set('action')} disabled={disabled}>
+            <option value="">Any Action</option>
+            {AUDIT_ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="audit-filter-entity">Entity type</label>
+          <select id="audit-filter-entity" value={values.entityType} onChange={set('entityType')} disabled={disabled}>
+            <option value="">Any Entity</option>
+            {AUDIT_ENTITIES.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="audit-filter-entity-id">Entity ID</label>
+          <input id="audit-filter-entity-id" type="number" min="1" placeholder="e.g. 42" value={values.entityId} onChange={set('entityId')} disabled={disabled} />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="audit-filter-actor">Actor user ID</label>
+          <input id="audit-filter-actor" type="number" min="1" placeholder="e.g. 10" value={values.actorUserId} onChange={set('actorUserId')} disabled={disabled} />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="audit-filter-from">From (UTC)</label>
+          <input id="audit-filter-from" type="datetime-local" value={values.from} onChange={set('from')} disabled={disabled} />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="audit-filter-to">To (UTC)</label>
+          <input id="audit-filter-to" type="datetime-local" value={values.to} onChange={set('to')} disabled={disabled} />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)', justifyContent: 'flex-end' }}>
+        <Button variant="secondary" size="sm" onClick={reset} disabled={disabled} icon={<RotateCcw size={13} />}>
+          Reset
+        </Button>
+        <Button type="submit" variant="primary" size="sm" disabled={disabled} icon={<Filter size={13} />}>
+          Apply
+        </Button>
+      </div>
     </form>
   );
 }

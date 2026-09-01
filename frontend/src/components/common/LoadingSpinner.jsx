@@ -2,8 +2,11 @@ import React from 'react';
 
 export function LoadingSpinner({ message = 'Loading…' }) {
   return (
-    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }} role="status">
-      <p>{message}</p>
+    <div className="spinner-container" role="status">
+      <div className="spinner" />
+      <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>
+        {message}
+      </p>
     </div>
   );
 }

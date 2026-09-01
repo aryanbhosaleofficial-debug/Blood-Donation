@@ -13,6 +13,7 @@ const {
 } = require('../../src/security/csrf');
 
 const ORIGIN = 'http://localhost:3000';
+const DEV_ORIGIN = 'http://localhost:5173';
 
 function fakeReq({ method = 'POST', path = '/api/x', session = {}, headers = {} } = {}) {
   const lower = {};
@@ -103,6 +104,16 @@ test('matching CSRF token + valid Origin passes', async () => {
   const err = await runMiddleware(
     mw,
     fakeReq({ session: { csrfToken: token }, headers: { Origin: ORIGIN, 'x-csrf-token': token } }),
+  );
+  assert.equal(err, undefined);
+});
+
+test('the explicitly configured Vite development Origin passes', async () => {
+  const mw = createCsrfMiddleware();
+  const token = generateToken();
+  const err = await runMiddleware(
+    mw,
+    fakeReq({ session: { csrfToken: token }, headers: { Origin: DEV_ORIGIN, 'x-csrf-token': token } }),
   );
   assert.equal(err, undefined);
 });

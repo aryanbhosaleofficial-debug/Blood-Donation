@@ -6,7 +6,11 @@ import { LocationSharingControl } from '../../components/donor/LocationSharingCo
 import { LoadingSpinner } from '../../components/common/LoadingSpinner.jsx';
 import { ErrorAlert } from '../../components/common/ErrorAlert.jsx';
 import { StatusBadge } from '../../components/common/StatusBadge.jsx';
+import { BloodGroupBadge } from '../../components/common/BloodGroupBadge.jsx';
+import { UrgencyBadge } from '../../components/common/UrgencyBadge.jsx';
+import { PageHeader } from '../../components/common/PageHeader.jsx';
 import { formatDateTime } from '../../utils/dates.js';
+import { ArrowLeft, Building2, MapPin, ShieldCheck, Clock } from 'lucide-react';
 
 export function DonorPledgeDetailPage() {
   const { pledgeId } = useParams();
@@ -62,7 +66,7 @@ export function DonorPledgeDetailPage() {
       <div className="page-container">
         <ErrorAlert error={error || 'Pledge not found.'} onRetry={loadPledge} />
         <Link to="/donor/pledges" className="btn btn-secondary">
-          Back to My Pledges
+          <ArrowLeft size={16} /> Back to My Pledges
         </Link>
       </div>
     );
@@ -73,44 +77,41 @@ export function DonorPledgeDetailPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h2>Pledge {pledge.publicReference}</h2>
-        <Link to="/donor/pledges" className="btn btn-secondary">
-          Back to My Pledges
-        </Link>
-      </div>
+      <PageHeader
+        title={`Pledge ${pledge.publicReference}`}
+        description="Manage active arrival status and privacy-controlled temporary location sharing for this emergency response."
+        actions={
+          <Link to="/donor/pledges" className="btn btn-secondary">
+            <ArrowLeft size={16} /> Back to My Pledges
+          </Link>
+        }
+      />
 
       <ErrorAlert error={error} onRetry={loadPledge} />
 
       <div className="card">
-        <h3>Pledge Overview</h3>
-        <div className="row">
-          <span className="k">Public Reference</span>
-          <span className="v"><strong>{pledge.publicReference}</strong></span>
+        <div className="card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+            <BloodGroupBadge bloodGroup={pledge.request?.bloodGroup} size="lg" />
+            <h3 style={{ margin: 0 }}>
+              Response Pledge #{pledge.publicReference}
+            </h3>
+            {pledge.request?.urgency && <UrgencyBadge urgency={pledge.request.urgency} />}
+          </div>
+          <StatusBadge status={pledge.status} />
         </div>
-        <div className="row">
-          <span className="k">Pledge Status</span>
-          <span className="v"><StatusBadge status={pledge.status} /></span>
-        </div>
-        <div className="row">
-          <span className="k">Hospital Destination</span>
-          <span className="v"><strong>{hospital.name || 'Hospital'}</strong></span>
-        </div>
-        <div className="row">
-          <span className="k">Hospital Location</span>
-          <span className="v">{hospitalLocation}</span>
-        </div>
-        <div className="row">
-          <span className="k">Requested Blood Group</span>
-          <span className="v"><strong>{pledge.request?.bloodGroup}</strong> (Red Cells)</span>
-        </div>
-        <div className="row">
-          <span className="k">Urgency</span>
-          <span className="v">{pledge.request?.urgency}</span>
-        </div>
-        <div className="row">
-          <span className="k">Pledged At</span>
-          <span className="v">{formatDateTime(pledge.pledgedAt)}</span>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)', margin: 'var(--space-4) 0' }}>
+          <div>
+            <div className="row"><span className="k">Public Reference</span><span className="v"><strong>{pledge.publicReference}</strong></span></div>
+            <div className="row"><span className="k">Hospital Destination</span><span className="v"><strong>{hospital.name || 'Hospital'}</strong></span></div>
+            <div className="row"><span className="k">Hospital Locality</span><span className="v">{hospitalLocation}</span></div>
+          </div>
+          <div>
+            <div className="row"><span className="k">Requested Blood Group</span><span className="v">{pledge.request?.bloodGroup} (Red Cells)</span></div>
+            <div className="row"><span className="k">Urgency Priority</span><span className="v">{pledge.request?.urgency}</span></div>
+            <div className="row"><span className="k">Pledged Timestamp</span><span className="v">{formatDateTime(pledge.pledgedAt)}</span></div>
+          </div>
         </div>
 
         <PledgeControl

@@ -4,8 +4,19 @@ import { requestsApi } from '../../api/requests.api.js';
 import { RequestCard } from '../../components/hospital/RequestCard.jsx';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner.jsx';
 import { ErrorAlert } from '../../components/common/ErrorAlert.jsx';
+import { PageHeader } from '../../components/common/PageHeader.jsx';
+import { EmptyState } from '../../components/common/EmptyState.jsx';
+import { Plus, Filter, Droplets, RefreshCw } from 'lucide-react';
+import { Button } from '../../components/common/Button.jsx';
 
-const STATUS_FILTERS = ['', 'OPEN', 'COVERED', 'COMPLETED', 'CANCELLED', 'EXPIRED'];
+const STATUS_FILTERS = [
+  { value: '', label: 'All Statuses' },
+  { value: 'OPEN', label: 'Open' },
+  { value: 'COVERED', label: 'Covered' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+  { value: 'EXPIRED', label: 'Expired' },
+];
 
 export function RequestListPage() {
   const [requests, setRequests] = useState([]);
@@ -32,30 +43,46 @@ export function RequestListPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h2>My Emergency Requests</h2>
-        <Link to="/hospital/requests/new" className="btn btn-primary">
-          Create New Request
-        </Link>
-      </div>
+      <PageHeader
+        title="My Emergency Requests"
+        description="Track all posted red-cell requests, real-time blood-bank reservations, and potential donor fallback responses."
+        actions={
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+            <Button variant="secondary" onClick={loadRequests} icon={<RefreshCw size={14} />}>
+              Refresh
+            </Button>
+            <Link to="/hospital/requests/new" className="btn btn-emergency">
+              <Plus size={16} /> Create New Request
+            </Link>
+          </div>
+        }
+      />
 
-      <div className="card" style={{ padding: '0.75rem 1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <label htmlFor="status-filter" style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-            Filter by status:
-          </label>
-          <select
-            id="status-filter"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: '0.4rem 0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
-          >
-            {STATUS_FILTERS.map((s) => (
-              <option key={s} value={s}>
-                {s || 'All Statuses'}
-              </option>
-            ))}
-          </select>
+      {/* Filter Toolbar */}
+      <div className="card" style={{ padding: 'var(--space-4) var(--space-5)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <Filter size={16} style={{ color: 'var(--color-text-muted)' }} />
+            <label htmlFor="status-filter" style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>
+              Filter by status:
+            </label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ minHeight: 36, padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-strong)' }}
+            >
+              {STATUS_FILTERS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+            Showing <strong>{requests.length}</strong> {requests.length === 1 ? 'request' : 'requests'}
+          </div>
         </div>
       </div>
 
@@ -64,12 +91,20 @@ export function RequestListPage() {
       {loading ? (
         <LoadingSpinner message="Loading emergency requests…" />
       ) : requests.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', color: 'var(--muted)', padding: '2.5rem' }}>
-          <p>No emergency requests found.</p>
-          <Link to="/hospital/requests/new" className="btn btn-secondary">
-            Create an Emergency Request
-          </Link>
-        </div>
+        <EmptyState
+          icon={<Droplets size={32} />}
+          title="No Emergency Requests Found"
+          description={
+            statusFilter
+              ? `There are no requests matching the "${statusFilter}" status filter.`
+              : 'You have not created any emergency red-cell requests yet.'
+          }
+          action={
+            <Link to="/hospital/requests/new" className="btn btn-emergency">
+              <Plus size={16} /> Create an Emergency Request
+            </Link>
+          }
+        />
       ) : (
         <div className="request-list">
           {requests.map((r) => (

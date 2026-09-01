@@ -18,12 +18,12 @@ const ROOT = path.resolve(__dirname, '..');
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 const procs = [
-  { name: 'backend ', cmd: process.execPath, args: ['--watch', path.join('backend', 'src', 'server.js')] },
+  { name: 'backend ', cmd: 'node', args: ['--watch', path.join('backend', 'src', 'server.js')] },
   { name: 'frontend', cmd: npm, args: ['--prefix', 'frontend', 'run', 'dev'] },
 ];
 
 const children = procs.map(({ name, cmd, args }) => {
-  const child = spawn(cmd, args, { cwd: ROOT, env: process.env });
+  const child = spawn(cmd, args, { cwd: ROOT, env: process.env, shell: true });
   const prefix = (line) => `[${name}] ${line}`;
   const pipe = (stream, out) => {
     let buf = '';

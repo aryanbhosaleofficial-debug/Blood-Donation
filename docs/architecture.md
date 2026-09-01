@@ -82,10 +82,22 @@ The architecture must:
 
 The frontend is a single-page application built with **React 18** and bundled with **Vite**, using **React Router (v6)** for client-side routing. It interacts with the Express backend exclusively via REST APIs through the centralized `apiClient`.
 
+`frontend/src/api/` is the browser-side REST client layer; it does not implement
+server endpoints. The actual API is the Express route/controller/service code in
+`backend/src/modules/`. The folder remains named `api` to avoid a broad import
+migration across the existing feature modules and tests.
+
+```text
+React
+  -> frontend/src/api browser request wrappers
+  -> backend/src/modules Express REST API
+  -> SQLite (current runtime) / backend-only providers
+```
+
 ### Key Frontend Principles:
 - **Centralized API Client**: All HTTP requests flow through `frontend/src/api/api-client.js` with `credentials: 'include'`.
 - **Memory-Only CSRF**: CSRF tokens are stored strictly in JavaScript runtime memory (`frontend/src/api/csrf-token.js`) and never written to `localStorage`, `sessionStorage`, or `IndexedDB`.
-- **Auth Bootstrap**: The client bootstraps via `GET /api/auth/me` to determine session state, fetching `GET /api/auth/csrf-token` only after confirming an active authenticated session.
+- **Auth Bootstrap**: `AuthProvider` is the single authority. It deduplicates the in-flight `GET /api/auth/me` probe under React StrictMode, models `loading` / `authenticated` / `unauthenticated` explicitly, and fetches `GET /api/auth/csrf-token` only after confirming an active authenticated session.
 - **Route Protection**: `ProtectedRoute` and `RoleRoute` enforce authenticated role layouts for UX navigation while backend authorization remains mandatory and authoritative.
 
 The frontend is organized into role-based portals:

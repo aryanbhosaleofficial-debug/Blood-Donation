@@ -19,6 +19,7 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cbdms-test-'));
 process.env.NODE_ENV = 'test';
 process.env.SESSION_SECRET = 'test-session-secret-abcdefghijklmnop';
 process.env.APP_ORIGIN = 'http://localhost:3000';
+process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
 process.env.DATABASE_PATH = path.join(dir, 'app.db');
 process.env.SESSION_DATABASE_PATH = path.join(dir, 'sessions.db');
 process.env.BCRYPT_ROUNDS = '4'; // fast hashing for tests

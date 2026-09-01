@@ -3,12 +3,18 @@ import { allocationsApi } from '../../api/allocations.api.js';
 import { BankAllocationList } from '../../components/blood-bank/BankAllocationList.jsx';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner.jsx';
 import { ErrorAlert } from '../../components/common/ErrorAlert.jsx';
+import { PageHeader } from '../../components/common/PageHeader.jsx';
+import { InfoBanner } from '../../components/common/InfoBanner.jsx';
+import { Button } from '../../components/common/Button.jsx';
+import { RefreshCw, CheckCircle2 } from 'lucide-react';
+import { useToast } from '../../components/common/ToastContext.jsx';
 
 export function AllocationHistoryPage() {
   const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionSuccess, setActionSuccess] = useState(null);
+  const toast = useToast();
 
   const loadAllocations = useCallback(async () => {
     setLoading(true);
@@ -32,10 +38,13 @@ export function AllocationHistoryPage() {
     setActionSuccess(null);
     try {
       await allocationsApi.releaseAllocation(allocationId);
-      setActionSuccess('Allocation released and stock restored to inventory.');
+      const msg = 'Allocation released and stock restored to inventory.';
+      setActionSuccess(msg);
+      toast.success(msg);
       await loadAllocations();
     } catch (err) {
       setError(err);
+      toast.error('Failed to release allocation.');
     }
   };
 
@@ -44,37 +53,49 @@ export function AllocationHistoryPage() {
     setActionSuccess(null);
     try {
       await allocationsApi.completeAllocation(allocationId);
-      setActionSuccess('Allocation marked as completed.');
+      const msg = 'Allocation marked as completed.';
+      setActionSuccess(msg);
+      toast.success(msg);
       await loadAllocations();
     } catch (err) {
       setError(err);
+      toast.error('Failed to complete allocation.');
     }
   };
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h2>My Allocations</h2>
-      </div>
+      <PageHeader
+        title="My Facility Allocations"
+        description="Review active stock holds and fulfilled blood unit dispatches for hospital emergency requests."
+        actions={
+          <Button variant="secondary" onClick={loadAllocations} icon={<RefreshCw size={14} />}>
+            Refresh
+          </Button>
+        }
+      />
 
-      <div className="disclaimer-box">
-        Releasing a reserved allocation restores units back to your red-cell inventory atomically. Marking completed records dispatch fulfillment.
-      </div>
+      <InfoBanner variant="info">
+        <strong>Atomic Stock Restoration:</strong> Releasing a reserved allocation restores units back to your recorded red-cell inventory automatically. Marking completed records formal fulfillment.
+      </InfoBanner>
 
       <ErrorAlert error={error} onRetry={loadAllocations} />
-      {actionSuccess && <div className="form-success">{actionSuccess}</div>}
+      {actionSuccess && (
+        <div className="form-success" role="status">
+          <CheckCircle2 size={16} />
+          <span>{actionSuccess}</span>
+        </div>
+      )}
 
-      <div className="card">
-        {loading ? (
-          <LoadingSpinner message="Loading bank allocations…" />
-        ) : (
-          <BankAllocationList
-            allocations={allocations}
-            onRelease={handleRelease}
-            onComplete={handleComplete}
-          />
-        )}
-      </div>
+      {loading ? (
+        <LoadingSpinner message="Loading bank allocations…" />
+      ) : (
+        <BankAllocationList
+          allocations={allocations}
+          onRelease={handleRelease}
+          onComplete={handleComplete}
+        />
+      )}
     </div>
   );
 }

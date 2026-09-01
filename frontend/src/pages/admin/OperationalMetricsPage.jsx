@@ -2,13 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { metricsApi } from '../../api/metrics.api.js';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner.jsx';
 import { ErrorAlert } from '../../components/common/ErrorAlert.jsx';
+import { PageHeader } from '../../components/common/PageHeader.jsx';
+import { Button } from '../../components/common/Button.jsx';
+import { InfoBanner } from '../../components/common/InfoBanner.jsx';
 import { MetricsSection } from '../../components/admin/MetricsSection.jsx';
+import { RefreshCw, BarChart3 } from 'lucide-react';
 
 /**
  * Admin operational metrics dashboard (Module 08).
  *
- * These are aggregate system counts for monitoring / CEP evaluation only.
- * They are NOT medical outcomes, guaranteed availability, or surge predictions.
+ * Aggregate platform metrics for monitoring & operational visibility.
  */
 export function OperationalMetricsPage() {
   const [metrics, setMetrics] = useState(null);
@@ -34,15 +37,24 @@ export function OperationalMetricsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h2>Operational Metrics</h2>
-        <button type="button" className="btn btn-secondary" onClick={load}>Refresh</button>
-      </div>
+      <PageHeader
+        title="Operational Metrics &amp; Monitoring"
+        description="Aggregate system metrics for blood logistics oversight, donor engagement tracking, and cleanup worker health."
+        actions={
+          <Button variant="secondary" onClick={load} icon={<RefreshCw size={14} />}>
+            Refresh Metrics
+          </Button>
+        }
+      />
+
+      <InfoBanner variant="info">
+        <strong>Monitoring Context:</strong> These counts reflect internal platform coordination and worker telemetry. They are operational throughput indicators, not guarantees of physical blood availability or transfusion outcomes.
+      </InfoBanner>
 
       <ErrorAlert error={error} onRetry={load} />
 
       {metrics && (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           <MetricsSection
             title="Emergency Requests"
             note="Synthetic/demo requests are counted separately from real operational requests."
@@ -128,7 +140,7 @@ export function OperationalMetricsPage() {
               { label: 'Location cleanup worker', value: metrics.workers.locationCleanup },
             ]}
           />
-        </>
+        </div>
       )}
     </div>
   );

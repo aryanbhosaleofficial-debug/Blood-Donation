@@ -15,7 +15,7 @@ const LABELS = {
  */
 export function SurgeStatusBadge({ status, isSynthetic }) {
   return (
-    <span>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {status && (
         <span className={`status-badge status-${String(status).toLowerCase()}`}>
           {LABELS[status] || status}
@@ -24,7 +24,6 @@ export function SurgeStatusBadge({ status, isSynthetic }) {
       {isSynthetic && (
         <span
           className="status-badge status-demo"
-          style={{ marginLeft: '0.4rem' }}
           title="Synthetic demo data — not real operational detection"
         >
           DEMO

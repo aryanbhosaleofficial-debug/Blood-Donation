@@ -535,7 +535,7 @@ The frontend is structured into modular layers following clean separation of con
 
 ```text
 src/
-├── api/          # Centralized REST API endpoints & memory-only CSRF
+├── api/          # Browser-side REST client wrappers & memory-only CSRF (not Express routes)
 ├── components/   # Presentational & interactive domain components
 ├── context/      # Application-level providers (AuthContext, CsrfContext)
 ├── hooks/        # Reusable React hooks (useAuth, useCsrf, usePolling)
@@ -570,7 +570,9 @@ Full-page views associated with specific routes. Handle data orchestration, load
 Reusable UI units for specific domains (e.g., `RequestForm.jsx`, `BankAllocationList.jsx`, `LocationSharingControl.jsx`).
 
 ## `api/`
-Encapsulates HTTP requests and schema serialization for each backend domain module.
+Encapsulates browser HTTP requests for each backend domain module. The actual
+REST endpoints are implemented under `backend/src/modules/`; React never calls
+the database, Supabase service role, or Gemini directly.
 
 ---
 

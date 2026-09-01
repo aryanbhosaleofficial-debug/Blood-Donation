@@ -2,14 +2,20 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { requestsApi } from '../../api/requests.api.js';
 import { RequestForm } from '../../components/hospital/RequestForm.jsx';
+import { PageHeader } from '../../components/common/PageHeader.jsx';
+import { InfoBanner } from '../../components/common/InfoBanner.jsx';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { useToast } from '../../components/common/ToastContext.jsx';
 
 export function CreateRequestPage() {
   const [result, setResult] = useState(null);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleCreate = async (payload) => {
     const data = await requestsApi.createRequest(payload);
     setResult(data);
+    toast.success(`Emergency request #${data.request?.id} created successfully.`);
     if (data && data.request) {
       navigate(`/hospital/requests/${data.request.id}`);
     }
@@ -17,25 +23,33 @@ export function CreateRequestPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h2>Create Emergency Request</h2>
-        <Link to="/hospital/requests" className="btn btn-secondary">
-          Back to My Requests
-        </Link>
-      </div>
+      <PageHeader
+        title="Create Emergency Request"
+        description="Broadcast an urgent red-cell requirement to verified participating blood banks in your coordination cluster."
+        actions={
+          <Link to="/hospital/requests" className="btn btn-secondary">
+            <ArrowLeft size={16} /> Back to My Requests
+          </Link>
+        }
+      />
 
-      <div className="disclaimer-box">
-        This posts an emergency coordination request for red cells to verified participating blood banks. It is a sourcing coordination tool, not a laboratory order.
-      </div>
+      <InfoBanner variant="info">
+        <strong>Coordination Protocol:</strong> This posts an emergency sourcing request to verified blood banks. It coordinates allocation hold without replacing physical delivery or laboratory cross-matching.
+      </InfoBanner>
 
       {result && result.request && (
         <div className="form-success" role="status">
-          Emergency Request #{result.request.id} created successfully. {result.broadcast?.bankCount || 0} participating blood bank(s) notified.
+          <CheckCircle2 size={16} />
+          <span>
+            Emergency Request #{result.request.id} created successfully. {result.broadcast?.bankCount || 0} participating blood bank(s) notified.
+          </span>
         </div>
       )}
 
       <div className="card">
-        <h3>Emergency Red-Cell Details</h3>
+        <div className="card-header">
+          <h3>Emergency Red-Cell Details</h3>
+        </div>
         <RequestForm onSubmit={handleCreate} />
       </div>
     </div>

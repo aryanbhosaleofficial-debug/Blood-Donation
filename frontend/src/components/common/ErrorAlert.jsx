@@ -1,22 +1,27 @@
 import React from 'react';
 import { formatDomainError } from '../../utils/formatters.js';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from './Button.jsx';
 
-export function ErrorAlert({ error, onRetry }) {
+export function ErrorAlert({ error, onRetry, className = '' }) {
   if (!error) return null;
   const message = formatDomainError(error);
 
   return (
-    <div className="form-error" role="alert" style={{ marginBottom: '1rem' }}>
-      <strong>Error: </strong> {message}
+    <div className={`form-error ${className}`.trim()} role="alert" style={{ marginBottom: 'var(--space-4)' }}>
+      <AlertCircle size={18} style={{ flexShrink: 0 }} />
+      <div style={{ flex: 1 }}>
+        <strong>Error: </strong> {message}
+      </div>
       {onRetry && (
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={{ marginLeft: '1rem', padding: '0.2rem 0.5rem', fontSize: '0.85rem' }}
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={onRetry}
+          icon={<RefreshCw size={12} />}
         >
           Retry
-        </button>
+        </Button>
       )}
     </div>
   );

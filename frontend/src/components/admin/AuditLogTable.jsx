@@ -7,7 +7,7 @@ import React from 'react';
  */
 export function AuditLogTable({ rows }) {
   if (!rows || rows.length === 0) {
-    return <p style={{ color: 'var(--muted)' }}>No audit events match the current filters.</p>;
+    return <p style={{ color: 'var(--color-text-muted)', padding: 'var(--space-6)', textAlign: 'center' }}>No audit events match the current filters.</p>;
   }
 
   return (
@@ -19,18 +19,48 @@ export function AuditLogTable({ rows }) {
             <th>Action</th>
             <th>Entity</th>
             <th>Actor User</th>
-            <th>Metadata</th>
+            <th>Metadata Context</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.id}>
-              <td>{row.createdAt}</td>
-              <td>{row.action}</td>
-              <td>{row.entityType ? `${row.entityType}${row.entityId != null ? ` #${row.entityId}` : ''}` : '—'}</td>
-              <td>{row.actorUserId != null ? row.actorUserId : 'system'}</td>
+              <td style={{ whiteSpace: 'nowrap', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                {row.createdAt}
+              </td>
               <td>
-                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '0.75rem' }}>
+                <span className="badge" style={{ backgroundColor: 'var(--color-primary-50)', color: 'var(--color-primary-900)', border: '1px solid var(--color-border)', fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                  {row.action}
+                </span>
+              </td>
+              <td>
+                {row.entityType ? (
+                  <strong style={{ fontSize: 'var(--font-size-sm)' }}>
+                    {row.entityType}{row.entityId != null ? ` #${row.entityId}` : ''}
+                  </strong>
+                ) : (
+                  '—'
+                )}
+              </td>
+              <td>
+                <span style={{ color: row.actorUserId != null ? 'var(--color-text-primary)' : 'var(--color-text-muted)', fontWeight: row.actorUserId != null ? 600 : 400 }}>
+                  {row.actorUserId != null ? `User #${row.actorUserId}` : 'system'}
+                </span>
+              </td>
+              <td style={{ maxWidth: 360 }}>
+                <pre
+                  style={{
+                    margin: 0,
+                    whiteSpace: 'pre-wrap',
+                    fontSize: '0.72rem',
+                    backgroundColor: 'var(--color-surface-subtle)',
+                    padding: 'var(--space-2)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--color-border)',
+                    maxHeight: 120,
+                    overflowY: 'auto',
+                  }}
+                >
                   {JSON.stringify(row.metadata ?? {}, null, 2)}
                 </pre>
               </td>

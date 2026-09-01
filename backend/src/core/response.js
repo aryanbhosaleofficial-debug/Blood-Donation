@@ -25,10 +25,23 @@ function sendSuccess(res, data = null, status = 200) {
  * @param {import('express').Response} res
  * @param {unknown} err
  */
+function isExpectedUnauthenticatedProbe(res, err, status) {
+  const req = res && res.req;
+  if (!req || status !== 401 || !err || err.code !== 'UNAUTHORIZED') return false;
+  const path = String(req.originalUrl || req.url || '').split('?')[0];
+  return req.method === 'GET' && path === '/api/auth/me';
+}
+
 function sendError(res, err) {
   const status = httpStatusFor(err);
   if (status >= 500) {
     logger.error('request failed', { code: err && err.code, message: err && err.message, stack: err && err.stack });
+  } else if (isExpectedUnauthenticatedProbe(res, err, status)) {
+    logger.info('unauthenticated auth bootstrap', {
+      code: err.code,
+      method: res.req.method,
+      path: String(res.req.originalUrl || res.req.url || '').split('?')[0],
+    });
   } else {
     logger.warn('request rejected', { code: err && err.code, message: err && err.message });
   }
@@ -46,4 +59,4 @@ function errorHandler(err, req, res, next) {
   sendError(res, err);
 }
 
-module.exports = { sendSuccess, sendError, notFoundHandler, errorHandler };
+module.exports = { sendSuccess, sendError, notFoundHandler, errorHandler, isExpectedUnauthenticatedProbe };

@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import React, { useState } from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { apiClient, setUnauthorizedHandler, ApiError } from '../src/api/api-client.js';
 import { usePolling } from '../src/hooks/usePolling.js';
+import { AuthContext } from '../src/context/AuthContext.jsx';
+import { NotificationBell } from '../src/components/common/NotificationBell.jsx';
+import { notificationsApi } from '../src/api/notifications.api.js';
 
 /**
  * Module 10 — frontend resilience regressions:
@@ -75,6 +78,65 @@ describe('usePolling — cleanup on unmount', () => {
     unmount();
     await act(async () => { vi.advanceTimersByTime(5000); });
     expect(tick.mock.calls.length).toBe(callsAtMount); // no further ticks
+  });
+
+  it('does not reschedule an in-flight poll after polling is disabled', async () => {
+    vi.useFakeTimers();
+    let finish;
+    const tick = vi.fn(() => new Promise((resolve) => { finish = resolve; }));
+
+    function Poller({ enabled }) {
+      usePolling(tick, 1000, enabled);
+      return <span>{enabled ? 'enabled' : 'disabled'}</span>;
+    }
+
+    const view = render(<Poller enabled />);
+    await act(async () => { await Promise.resolve(); });
+    expect(tick).toHaveBeenCalledTimes(1);
+
+    view.rerender(<Poller enabled={false} />);
+    await act(async () => {
+      finish();
+      await Promise.resolve();
+      vi.advanceTimersByTime(5000);
+    });
+    expect(tick).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('NotificationBell — authentication-gated polling', () => {
+  it('starts only when authenticated and stops on logout', async () => {
+    vi.useFakeTimers();
+    const getUnreadCount = vi.spyOn(notificationsApi, 'getUnreadCount').mockResolvedValue({ unreadCount: 0 });
+
+    const authValue = (authStatus) => ({
+      authStatus,
+      isAuthenticated: authStatus === 'authenticated',
+      user: authStatus === 'authenticated' ? { id: 1, role: 'DONOR' } : null,
+    });
+    const view = render(
+      <AuthContext.Provider value={authValue('unauthenticated')}>
+        <NotificationBell />
+      </AuthContext.Provider>,
+    );
+    await act(async () => { vi.advanceTimersByTime(30000); });
+    expect(getUnreadCount).not.toHaveBeenCalled();
+
+    view.rerender(
+      <AuthContext.Provider value={authValue('authenticated')}>
+        <NotificationBell />
+      </AuthContext.Provider>,
+    );
+    await act(async () => { await Promise.resolve(); });
+    expect(getUnreadCount).toHaveBeenCalledTimes(1);
+
+    view.rerender(
+      <AuthContext.Provider value={authValue('unauthenticated')}>
+        <NotificationBell />
+      </AuthContext.Provider>,
+    );
+    await act(async () => { vi.advanceTimersByTime(30000); });
+    expect(getUnreadCount).toHaveBeenCalledTimes(1);
   });
 });
 

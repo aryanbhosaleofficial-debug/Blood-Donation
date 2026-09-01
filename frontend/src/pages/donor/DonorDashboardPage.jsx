@@ -4,6 +4,11 @@ import { donorApi } from '../../api/donor.api.js';
 import { pledgesApi } from '../../api/pledges.api.js';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner.jsx';
 import { StatusBadge } from '../../components/common/StatusBadge.jsx';
+import { PageHeader } from '../../components/common/PageHeader.jsx';
+import { MetricCard } from '../../components/common/MetricCard.jsx';
+import { BloodGroupBadge } from '../../components/common/BloodGroupBadge.jsx';
+import { InfoBanner } from '../../components/common/InfoBanner.jsx';
+import { Bell, ShieldCheck, Activity, User, HeartHandshake, ArrowRight } from 'lucide-react';
 
 export function DonorDashboardPage() {
   const [profile, setProfile] = useState(null);
@@ -40,58 +45,70 @@ export function DonorDashboardPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h2>Donor Dashboard</h2>
-      </div>
+      <PageHeader
+        title="Community Donor Workspace"
+        description="Review active emergency blood-matching notifications, manage response pledges, and configure contact availability."
+        actions={
+          profile?.bloodGroup && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <BloodGroupBadge bloodGroup={profile.bloodGroup} size="lg" />
+            </div>
+          )
+        }
+      />
 
+      {/* Summary Metrics */}
       <div className="dashboard-stats-grid">
-        <div className="stat-card">
-          <div className="stat-label">Profile Status</div>
-          <div className="stat-value" style={{ fontSize: '1.1rem' }}>
-            {profile ? 'Complete' : 'Incomplete'}
-          </div>
-        </div>
+        <MetricCard
+          label="Profile Status"
+          value={profile ? 'Complete' : 'Incomplete'}
+          subtext={profile ? `Registered as ${profile.bloodGroup}` : 'Profile setup required'}
+          icon={<User size={20} />}
+        />
 
-        <div className="stat-card">
-          <div className="stat-label">Effective Availability</div>
-          <div className="stat-value" style={{ fontSize: '1.1rem' }}>
-            {profile?.effectiveAvailability || 'Unknown'}
-          </div>
-        </div>
+        <MetricCard
+          label="Effective Availability"
+          value={profile?.effectiveAvailability || 'Unknown'}
+          subtext={profile?.effectiveAvailability === 'AVAILABLE' ? 'Ready for urgent matching' : 'Notifications suppressed'}
+          icon={<Activity size={20} />}
+        />
 
-        <div className="stat-card">
-          <div className="stat-label">Active Emergency Alerts</div>
-          <div className="stat-value" style={{ color: activeAlertsCount > 0 ? 'var(--accent)' : 'inherit' }}>
-            {activeAlertsCount}
-          </div>
-        </div>
+        <MetricCard
+          label="Active Emergency Alerts"
+          value={activeAlertsCount}
+          subtext={activeAlertsCount > 0 ? 'Urgent requests requiring response' : 'No pending notifications'}
+          icon={<Bell size={20} />}
+        />
 
-        <div className="stat-card">
-          <div className="stat-label">Active Response Pledges</div>
-          <div className="stat-value" style={{ color: activePledgesCount > 0 ? 'var(--info)' : 'inherit' }}>
-            {activePledgesCount}
-          </div>
-        </div>
+        <MetricCard
+          label="Active Response Pledges"
+          value={activePledgesCount}
+          subtext={activePledgesCount > 0 ? 'Active coordination in progress' : 'No active pledges'}
+          icon={<ShieldCheck size={20} />}
+        />
       </div>
 
-      <div className="disclaimer-box">
-        A pledge indicates willingness to respond and travel to the hospital. All donors undergo independent medical screening and testing at the facility prior to donation.
-      </div>
+      <InfoBanner variant="info">
+        <strong>Community Coordination Notice:</strong> Matching identifies potential compatibility for emergency hospital sourcing. A pledge communicates your readiness to travel; final suitability and health clearance are determined by healthcare staff at the collection facility.
+      </InfoBanner>
 
+      {/* Quick Navigation Cards */}
       <div className="card">
-        <h3>Quick Actions</h3>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link to="/donor/alerts" className="btn btn-primary">
-            View Emergency Alerts ({activeAlertsCount})
+        <div className="card-header">
+          <h3>Donor Actions</h3>
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          <Link to="/donor/alerts" className="btn btn-emergency">
+            <Bell size={16} /> View Emergency Alerts ({activeAlertsCount})
           </Link>
           <Link to="/donor/pledges" className="btn btn-secondary">
-            My Pledges ({activePledgesCount})
+            <ShieldCheck size={16} /> My Response Pledges ({activePledgesCount})
           </Link>
           <Link to="/donor/availability" className="btn btn-secondary">
-            Update Availability
+            <Activity size={16} /> Update Availability
           </Link>
           <Link to="/donor/profile" className="btn btn-secondary">
-            Edit Profile
+            <User size={16} /> Edit Profile
           </Link>
         </div>
       </div>

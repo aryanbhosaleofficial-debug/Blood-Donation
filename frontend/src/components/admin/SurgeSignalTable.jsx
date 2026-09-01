@@ -32,13 +32,19 @@ export function SurgeSignalTable({ candidate }) {
         <tbody>
           {rows.map(([label, value]) => (
             <tr key={label}>
-              <th style={{ textAlign: 'left', width: '55%' }}>{label}</th>
-              <td>{value === null || value === undefined ? '—' : String(value)}</td>
+              <th style={{ textAlign: 'left', width: '55%', color: 'var(--color-text-primary)', fontWeight: 600 }}>
+                {label}
+              </th>
+              <td>
+                <span style={{ fontWeight: label.includes('Score') || label.includes('Observed') ? 700 : 400 }}>
+                  {value === null || value === undefined ? '—' : String(value)}
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>
+      <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)', marginTop: 'var(--space-3)', lineHeight: 1.5 }}>
         Upper-tail probability is the probability of observing this many or more
         requests under the configured baseline model. It is <strong>not</strong> a
         probability of a disaster.

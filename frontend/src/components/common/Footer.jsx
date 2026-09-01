@@ -4,8 +4,7 @@ export function Footer() {
   return (
     <footer className="app-footer">
       <p>
-        Module 06 — Potential donor coordination. Pledges, temporary location, and coarse ETA remain subject to
-        professional blood-bank screening and medical testing.
+        <strong>Community Blood Donation Matching System</strong> — Coordination support only. Final donor screening, blood testing, and transfusion decisions are handled by qualified medical professionals.
       </p>
     </footer>
   );

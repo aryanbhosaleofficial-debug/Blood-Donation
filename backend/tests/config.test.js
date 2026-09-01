@@ -39,6 +39,8 @@ test('honours overrides and coerces types', () => {
     ...validEnv(),
     NODE_ENV: 'production',
     PORT: '8080',
+    APP_ORIGIN: 'http://localhost:3000',
+    FRONTEND_ORIGIN: 'http://localhost:5173',
     REQUEST_TTL_MINUTES: '45',
     SURGE_PROBABILITY_THRESHOLD: '0.005',
     INVENTORY_MAX_UNITS: '2500',
@@ -53,6 +55,8 @@ test('honours overrides and coerces types', () => {
   assert.equal(cfg.nodeEnv, 'production');
   assert.equal(cfg.isProduction, true);
   assert.equal(cfg.port, 8080);
+  assert.equal(cfg.appOrigin, 'http://localhost:3000');
+  assert.equal(cfg.frontendOrigin, 'http://localhost:5173');
   assert.equal(cfg.requestTtlMinutes, 45);
   assert.equal(cfg.surge.probabilityThreshold, 0.005);
   assert.equal(cfg.inventoryMaxUnits, 2500);

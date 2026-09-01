@@ -1,16 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { FileQuestion, ArrowLeft } from 'lucide-react';
+import { EmptyState } from '../components/common/EmptyState.jsx';
 
 export function NotFoundPage() {
   return (
-    <div className="page-container" style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
-      <h2>Page Not Found</h2>
-      <p style={{ color: 'var(--muted)', margin: '1rem 0 2rem' }}>
-        The requested page does not exist or has been moved.
-      </p>
-      <Link to="/" className="btn btn-primary">
-        Return to Home
-      </Link>
+    <div className="page-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <EmptyState
+        icon={<FileQuestion size={36} />}
+        title="Page Not Found (404)"
+        description="The operational screen or resource you requested does not exist or has been moved."
+        action={
+          <Link to="/" className="btn btn-primary" style={{ display: 'inline-flex' }}>
+            <ArrowLeft size={16} /> Return to Home
+          </Link>
+        }
+      />
     </div>
   );
 }
